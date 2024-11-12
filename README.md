@@ -4174,7 +4174,7 @@ fin_programa:
 
 ## Descripción
 
-Programa 28 de 50 Operaciones AND, OR, XOR a nivel de bits.
+Programa 28 de 50 Establecer, borrar y alternar bits
 Video de Prueba
 https://asciinema.org/a/689354
 
@@ -4401,7 +4401,7 @@ fin_programa:
 
 ## Descripción
 
-Programa 29 de 50 Desplazamientos a la izquierda y derecha.
+Programa 29 de 50 Numero de Bits Activados en un numero.
 Video de Prueba
 https://asciinema.org/a/689356
 
@@ -4538,7 +4538,7 @@ mostrar_bits:
 
 ## Descripción
 
-Programa 30 de 50 Establecer, borrar y alternar bits.
+Programa 30 de 50 Programa que calcula el MCD.
 Video de Prueba
 https://asciinema.org/a/689359
 
