@@ -1665,7 +1665,7 @@ encontrado:
 ```
 ## Descripción
 
-Programa 15 de 50 Busqueda Lineal.
+Programa 15 de 50 Busqueda Binaria.
 Video de Prueba
 https://asciinema.org/a/688888
 
@@ -3150,4 +3150,1596 @@ end_print_loop_i:
     ldp x29, x30, [sp], 16
     ret
 
+```
+
+## Descripción
+
+Programa 21 de 50 Transposicion de una Matriz.
+Video de Prueba
+https://asciinema.org/a/689325
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 12/11/2024
+// Descripción: Programa completo de transposición de matriz
+
+/*
+using System;
+
+class MatrixTranspose
+{
+    static void Main()
+    {
+        // Definimos la matriz original
+        long[,] matriz = {
+            { 1, 2, 3 },
+            { 4, 5, 6 },
+            { 7, 8, 9 }
+        };
+
+        int filas = 3;
+        int columnas = 3;
+        long[,] transpuesta = new long[filas, columnas];
+
+        Console.WriteLine("Matriz Original:");
+        ImprimirMatriz(matriz, filas, columnas);
+
+        // Transponer la matriz
+        TransponerMatriz(matriz, transpuesta, filas, columnas);
+
+        Console.WriteLine("\nMatriz Transpuesta:");
+        ImprimirMatriz(transpuesta, filas, columnas);
+    }
+
+    // Función para transponer una matriz
+    static void TransponerMatriz(long[,] matriz, long[,] transpuesta, int filas, int columnas)
+    {
+        for (int i = 0; i < filas; i++)
+        {
+            for (int j = 0; j < columnas; j++)
+            {
+                transpuesta[j, i] = matriz[i, j];
+            }
+        }
+    }
+
+    // Función para imprimir una matriz
+    static void ImprimirMatriz(long[,] matriz, int filas, int columnas)
+    {
+        for (int i = 0; i < filas; i++)
+        {
+            for (int j = 0; j < columnas; j++)
+            {
+                Console.Write($"{matriz[i, j],4} ");
+            }
+            Console.WriteLine();
+        }
+    }
+}
+*/
+
+//Ensamblador
+ .arch armv8-a              // Especifica la arquitectura ARMv8-A
+
+    .data
+    // Matriz original 3x3
+matriz:     .quad   1, 2, 3
+           .quad   4, 5, 6
+           .quad   7, 8, 9
+    
+    // Matriz transpuesta 3x3
+transpuesta: .zero   72          // 9 elementos * 8 bytes = 72 bytes
+    
+    // Dimensiones de la matriz
+filas:      .quad   3
+columnas:   .quad   3
+    
+    // Mensajes para imprimir
+msg_original:   .string "\nMatriz Original:\n"
+msg_trans:      .string "\nMatriz Transpuesta:\n"
+msg_elemento:   .string "%3ld "  // Formato para long int en Linux
+msg_newline:    .string "\n"
+
+    .text
+    .global main
+    .type main, %function
+    .align 2
+main:
+    // Prólogo
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+    
+    // Mostrar matriz original
+    adr     x0, msg_original
+    bl      printf
+    adr     x0, matriz
+    bl      imprimir_matriz
+    
+    // Transponer matriz
+    bl      transponer_matriz
+    
+    // Mostrar matriz transpuesta
+    adr     x0, msg_trans
+    bl      printf
+    adr     x0, transpuesta
+    bl      imprimir_matriz
+    
+    // Epílogo y retorno
+    ldp     x29, x30, [sp], 16
+    mov     w0, 0
+    ret
+
+// Función para transponer matriz
+transponer_matriz:
+    stp     x29, x30, [sp, -64]!
+    mov     x29, sp
+    // Inicializar contadores
+    mov     x19, #0              // i = 0
+    adr     x20, filas
+    ldr     x20, [x20]          // Cargar número de filas
+    adr     x21, columnas
+    ldr     x21, [x21]          // Cargar número de columnas
+
+bucle_i:
+    cmp     x19, x20            // Comparar i con filas
+    b.ge    fin_transposicion
+    mov     x22, #0             // j = 0
+
+bucle_j:
+    cmp     x22, x21            // Comparar j con columnas
+    b.ge    siguiente_i
+    
+    // Calcular índice matriz original [i][j]
+    mul     x23, x19, x21       // i * columnas
+    add     x23, x23, x22       // + j
+    lsl     x23, x23, #3        // * 8 (tamaño de quad)
+    
+    // Calcular índice matriz transpuesta [j][i]
+    mul     x24, x22, x20       // j * filas
+    add     x24, x24, x19       // + i
+    lsl     x24, x24, #3        // * 8
+    
+    // Cargar elemento de matriz original
+    adr     x25, matriz
+    ldr     x26, [x25, x23]
+    
+    // Guardar en matriz transpuesta
+    adr     x27, transpuesta
+    str     x26, [x27, x24]
+    
+    add     x22, x22, #1        // j++
+    b       bucle_j
+
+siguiente_i:
+    add     x19, x19, #1        // i++
+    b       bucle_i
+
+fin_transposicion:
+    ldp     x29, x30, [sp], 64
+    ret
+
+// Función para imprimir matriz
+imprimir_matriz:
+    stp     x29, x30, [sp, -48]!
+    mov     x29, sp
+    str     x0, [sp, 16]        // Guardar dirección de la matriz
+    mov     x19, #0             // i = 0
+    adr     x20, filas
+    ldr     x20, [x20]          // Cargar número de filas
+    adr     x21, columnas
+    ldr     x21, [x21]          // Cargar número de columnas
+
+bucle_imprimir_ext:
+    cmp     x19, x20
+    b.ge    fin_imprimir
+    mov     x22, #0             // j = 0
+
+bucle_imprimir_int:
+    cmp     x22, x21
+    b.ge    nueva_linea
+    // Calcular offset
+    mul     x23, x19, x21
+    add     x23, x23, x22
+    lsl     x23, x23, #3
+    // Imprimir elemento
+    adr     x0, msg_elemento
+    ldr     x24, [sp, 16]
+    ldr     x1, [x24, x23]
+    bl      printf
+    add     x22, x22, #1
+    b       bucle_imprimir_int
+
+nueva_linea:
+    adr     x0, msg_newline
+    bl      printf
+    add     x19, x19, #1
+    b       bucle_imprimir_ext
+
+fin_imprimir:
+    ldp     x29, x30, [sp], 48
+    ret
+
+```
+
+## Descripción
+
+Programa 22 de 50 Conversion de ASCII a entero.
+Video de Prueba 
+https://asciinema.org/a/689331
+
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 12/11/2024
+// Descripción: Programa que convierte ASCII a Entero correspondiente.
+
+/*using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Mensajes
+        string msgIngreso = "Ingrese la letra que quiere convertir a entero: ";
+        string msgResultado = "El valor entero es: {0}\n";
+
+        // Mostrar mensaje de ingreso
+        Console.Write(msgIngreso);
+
+        // Leer carácter y convertir a número entero
+        char inputChar = Console.ReadKey().KeyChar;
+        Console.WriteLine(); // Salto de línea para el resultado
+
+        // Convertir ASCII a entero
+        int valorEntero = inputChar - '0';
+
+        // Mostrar resultado
+        Console.WriteLine(msgResultado, valorEntero);
+    }
+}
+*/
+
+
+
+  .data
+msg_ingreso:    .string "Ingrese la letra a convertir a entero: "
+msg_resultado:  .string "El valor entero es: %d\n"
+formato_char:   .string " %c"    // Espacio antes de %c para ignorar whitespace
+buffer:         .skip 2          // Buffer para almacenar el carácter
+
+    .text
+    .global main
+    .align 2
+
+main:
+    // Prólogo
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+    // Mostrar mensaje de ingreso
+    adr     x0, msg_ingreso
+    bl      printf
+
+    // Leer carácter
+    adr     x0, formato_char
+    adr     x1, buffer
+    bl      scanf
+
+    // Convertir ASCII a entero
+    adr     x0, buffer
+    ldrb    w0, [x0]            // Cargar el carácter
+    sub     w0, w0, #48         // Restar 48 (ASCII '0') para obtener el valor
+
+    // Mostrar resultado
+    mov     w1, w0              // Mover resultado a w1 para printf
+    adr     x0, msg_resultado
+    bl      printf
+
+    // Epílogo y retorno
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
+    ret
+
+```
+
+## Descripción
+
+Programa 23 de 50 Conversion de entero a ASCII.
+Video de Prueba
+https://asciinema.org/a/689329
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 12/11/2024
+// Descripción: Programa que convierte entero a ASCII correspondiente
+
+/*using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Mensajes
+        string msgIngreso = "Ingrese un número entero (0-9): ";
+        string msgResultado = "El carácter ASCII es: {0}\n";
+
+        // Mostrar mensaje de ingreso
+        Console.Write(msgIngreso);
+
+        // Leer número entero ingresado por el usuario
+        if (int.TryParse(Console.ReadLine(), out int numero) && numero >= 0 && numero <= 9)
+        {
+            // Convertir entero a carácter ASCII
+            char caracterASCII = (char)(numero + '0');
+
+            // Mostrar resultado
+            Console.WriteLine(msgResultado, caracterASCII);
+        }
+        else
+        {
+            Console.WriteLine("Entrada no válida. Por favor, ingrese un número entre 0 y 9.");
+        }
+    }
+}
+*/
+
+
+
+    
+    .data
+msg_ingreso:    .string "Ingrese un número entero (0-9): "
+msg_resultado:  .string "El carácter ASCII es: %c\n"
+formato_int:    .string "%d"     // Formato para leer entero
+numero:         .word 0          // Variable para almacenar el número
+
+    .text
+    .global main
+    .align 2
+
+main:
+    // Prólogo
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+    // Mostrar mensaje de ingreso
+    adr     x0, msg_ingreso
+    bl      printf
+
+    // Leer número entero
+    adr     x0, formato_int
+    adr     x1, numero
+    bl      scanf
+
+    // Convertir entero a ASCII
+    adr     x0, numero
+    ldr     w0, [x0]            // Cargar el número
+    add     w1, w0, #48         // Sumar 48 (ASCII '0') para obtener el carácter
+
+    // Mostrar resultado
+    adr     x0, msg_resultado
+    bl      printf
+
+    // Epílogo y retorno
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
+    ret
+
+```
+
+## Descripción
+
+Programa 24 de 50 Calcular la longitud de una cadena.
+Video de Prueba
+https://asciinema.org/a/689332
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 12/11/2024
+// Descripción: Programa que calcula la Logitud de una Cadena.
+
+/*
+using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Mensajes
+        string msgIngreso = "Ingrese una cadena: ";
+        string msgResultado = "La longitud de la cadena es: {0}\n";
+
+        // Mostrar mensaje de ingreso
+        Console.Write(msgIngreso);
+
+        // Leer cadena ingresada por el usuario
+        string input = Console.ReadLine();
+
+        // Calcular longitud de la cadena
+        int longitud = input.Length;
+
+        // Mostrar resultado
+        Console.WriteLine(msgResultado, longitud);
+    }
+}
+*/
+
+//Ensamblador ARM64bits
+ .data
+msg_ingreso:    .string "Ingrese una cadena: "
+msg_resultado:  .string "La longitud de la cadena es: %d\n"
+buffer:         .skip 100        // Buffer para almacenar la cadena
+formato_str:    .string "%[^\n]" // Leer hasta encontrar newline
+
+    .text
+    .global main
+    .align 2
+
+main:
+    // Prólogo
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+    // Mostrar mensaje de ingreso
+    adr     x0, msg_ingreso
+    bl      printf
+
+    // Leer cadena
+    adr     x0, formato_str
+    adr     x1, buffer
+    bl      scanf
+
+    // Calcular longitud
+    adr     x0, buffer
+    mov     x1, #0              // Contador de caracteres
+
+contar_loop:
+    ldrb    w2, [x0, x1]       // Cargar carácter
+    cbz     w2, fin_conteo      // Si es 0, fin de cadena
+    add     x1, x1, #1         // Incrementar contador
+    b       contar_loop
+
+fin_conteo:
+    // Mostrar resultado
+    adr     x0, msg_resultado
+    bl      printf
+
+    // Epílogo y retorno
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
+    ret
+
+```
+
+## Descripción
+
+Programa 25 de 50 Contar vocales y consonantes.
+Video de Prueba
+https://asciinema.org/a/689333
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 12/11/2024
+// Descripción: Programa que cuenta las vocales y consonantes.
+
+/*using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Mensajes
+        string msgIngreso = "Ingrese una cadena: ";
+        string msgVocales = "Número de vocales: {0}\n";
+        string msgConsonantes = "Número de consonantes: {0}\n";
+        
+        // Definir vocales
+        string vocales = "aeiouAEIOU";
+
+        // Mostrar mensaje de ingreso
+        Console.Write(msgIngreso);
+
+        // Leer la cadena del usuario
+        string input = Console.ReadLine();
+
+        // Contadores
+        int vocalesCount = 0;
+        int consonantesCount = 0;
+
+        // Procesar la cadena
+        foreach (char c in input)
+        {
+            // Verificar si el carácter es una letra
+            if (Char.IsLetter(c))
+            {
+                // Verificar si es una vocal
+                if (vocales.Contains(c))
+                {
+                    vocalesCount++;
+                }
+                else
+                {
+                    consonantesCount++;
+                }
+            }
+        }
+
+        // Mostrar resultados
+        Console.WriteLine(msgVocales, vocalesCount);
+        Console.WriteLine(msgConsonantes, consonantesCount);
+    }
+}
+*/
+
+ .data
+msg_ingreso:    .string "Ingrese una cadena: "
+msg_vocales:    .string "Número de vocales: %d\n"
+msg_consonantes: .string "Número de consonantes: %d\n"
+buffer:         .skip 100        // Buffer para almacenar la cadena
+formato_str:    .string "%[^\n]" // Leer hasta encontrar newline
+vocales:        .ascii "aeiouAEIOU"
+
+    .text
+    .global main
+    .align 2
+
+main:
+    // Prólogo
+    stp     x29, x30, [sp, -32]!
+    mov     x29, sp
+    
+    // Guardar contadores en el stack
+    str     xzr, [sp, 16]       // Contador vocales
+    str     xzr, [sp, 24]       // Contador consonantes
+
+    // Mostrar mensaje de ingreso
+    adr     x0, msg_ingreso
+    bl      printf
+
+    // Leer cadena
+    adr     x0, formato_str
+    adr     x1, buffer
+    bl      scanf
+
+    // Iniciar procesamiento de la cadena
+    adr     x0, buffer          // x0 = dirección de la cadena
+    mov     x1, #0              // x1 = índice en la cadena
+
+procesar_char:
+    ldrb    w2, [x0, x1]       // Cargar carácter
+    cbz     w2, fin_conteo      // Si es 0, fin de cadena
+
+    // Verificar si es letra
+    cmp     w2, #'A'
+    b.lt    siguiente_char
+    cmp     w2, #'z'
+    b.gt    siguiente_char
+    cmp     w2, #'Z'
+    b.le    es_letra
+    cmp     w2, #'a'
+    b.ge    es_letra
+    b       siguiente_char
+
+es_letra:
+    // Verificar si es vocal
+    adr     x3, vocales         // x3 = dirección de vocales
+    mov     x4, #0              // x4 = índice en vocales
+
+check_vocal:
+    ldrb    w5, [x3, x4]       // Cargar vocal
+    cbz     w5, es_consonante   // Si llegamos al final, es consonante
+    cmp     w2, w5             // Comparar con vocal actual
+    b.eq    es_vocal
+    add     x4, x4, #1
+    b       check_vocal
+
+es_vocal:
+    ldr     x4, [sp, 16]       // Cargar contador de vocales
+    add     x4, x4, #1         // Incrementar
+    str     x4, [sp, 16]       // Guardar nuevo valor
+    b       siguiente_char
+
+es_consonante:
+    ldr     x4, [sp, 24]       // Cargar contador de consonantes
+    add     x4, x4, #1         // Incrementar
+    str     x4, [sp, 24]       // Guardar nuevo valor
+
+siguiente_char:
+    add     x1, x1, #1         // Siguiente carácter
+    b       procesar_char
+
+fin_conteo:
+    // Mostrar resultados
+    adr     x0, msg_vocales
+    ldr     x1, [sp, 16]
+    bl      printf
+
+    adr     x0, msg_consonantes
+    ldr     x1, [sp, 24]
+    bl      printf
+
+    // Epílogo y retorno
+    mov     w0, #0
+    ldp     x29, x30, [sp], 32
+    ret
+```
+
+## Descripción
+
+Programa 26 de 50 Operaciones AND, OR, XOR a nivel de bits.
+Video de Prueba
+https://asciinema.org/a/689342
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 12/11/2024
+// Descripción:  Programa que realiza operaciones AND, OR, XOR.
+
+/*using System;
+
+class Program
+{
+    static void Main()
+    {
+        int opcion, numero1, numero2, resultado;
+
+        // Menú de operaciones
+        while (true)
+        {
+            Console.WriteLine("\nOperaciones a nivel de bits");
+            Console.WriteLine("1. AND");
+            Console.WriteLine("2. OR");
+            Console.WriteLine("3. XOR");
+            Console.WriteLine("4. Salir");
+            Console.Write("Seleccione una opción: ");
+
+            // Leer opción
+            opcion = int.Parse(Console.ReadLine());
+
+            // Verificar si se quiere salir
+            if (opcion == 4)
+                break;
+
+            // Leer primer número
+            Console.Write("Ingrese el primer número: ");
+            numero1 = int.Parse(Console.ReadLine());
+
+            // Leer segundo número
+            Console.Write("Ingrese el segundo número: ");
+            numero2 = int.Parse(Console.ReadLine());
+
+            // Realizar operación según la opción seleccionada
+            switch (opcion)
+            {
+                case 1: // AND
+                    resultado = numero1 & numero2;
+                    break;
+                case 2: // OR
+                    resultado = numero1 | numero2;
+                    break;
+                case 3: // XOR
+                    resultado = numero1 ^ numero2;
+                    break;
+                default:
+                    continue;
+            }
+
+            // Mostrar resultado en decimal
+            Console.WriteLine("Resultado: " + resultado);
+
+            // Mostrar resultado en binario
+            Console.Write("En binario: ");
+            MostrarEnBinario(resultado);
+        }
+    }
+
+    static void MostrarEnBinario(int numero)
+    {
+        for (int i = 31; i >= 0; i--)
+        {
+            int bit = (numero >> i) & 1; // Obtener el bit correspondiente
+            Console.Write(bit);
+        }
+        Console.WriteLine();
+    }
+}
+*/
+
+//Ensamblador ARM64bits
+
+ .data
+msg_menu:       .string "\nOperaciones a nivel de bits\n"
+                .string "1. AND\n"
+                .string "2. OR\n"
+                .string "3. XOR\n"
+                .string "4. Salir\n"
+                .string "Seleccione una opción: "
+
+msg_num1:       .string "Ingrese el primer número: "
+msg_num2:       .string "Ingrese el segundo número: "
+msg_resultado:  .string "Resultado: %d\n"
+msg_binario:    .string "En binario: "
+msg_bit:        .string "%d"
+msg_newline:    .string "\n"
+formato_int:    .string "%d"
+
+opcion:         .word 0
+numero1:        .word 0
+numero2:        .word 0
+
+    .text
+    .global main
+    .align 2
+
+main:
+    // Prólogo
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr     x0, msg_menu
+    bl      printf
+
+    // Leer opción
+    adr     x0, formato_int
+    adr     x1, opcion
+    bl      scanf
+
+    // Verificar si es opción de salida
+    adr     x0, opcion
+    ldr     w0, [x0]
+    cmp     w0, #4
+    b.eq    fin_programa
+
+    // Leer primer número
+    adr     x0, msg_num1
+    bl      printf
+    adr     x0, formato_int
+    adr     x1, numero1
+    bl      scanf
+
+    // Leer segundo número
+    adr     x0, msg_num2
+    bl      printf
+    adr     x0, formato_int
+    adr     x1, numero2
+    bl      scanf
+
+    // Cargar números en registros
+    adr     x0, numero1
+    ldr     w1, [x0]
+    adr     x0, numero2
+    ldr     w2, [x0]
+
+    // Verificar operación seleccionada
+    adr     x0, opcion
+    ldr     w0, [x0]
+
+    cmp     w0, #1
+    b.eq    hacer_and
+    cmp     w0, #2
+    b.eq    hacer_or
+    cmp     w0, #3
+    b.eq    hacer_xor
+    b       menu_loop
+
+hacer_and:
+    and     w1, w1, w2
+    b       mostrar_resultado
+
+hacer_or:
+    orr     w1, w1, w2
+    b       mostrar_resultado
+
+hacer_xor:
+    eor     w1, w1, w2
+
+mostrar_resultado:
+    // Guardar resultado para mostrar
+    mov     w19, w1             // Guardar resultado para mostrar en binario después
+
+    // Mostrar resultado en decimal
+    adr     x0, msg_resultado
+    bl      printf
+
+    // Mostrar resultado en binario
+    adr     x0, msg_binario
+    bl      printf
+
+    mov     w20, #32            // Contador de bits
+mostrar_bits:
+    sub     w20, w20, #1        // Decrementar contador
+    lsr     w21, w19, w20       // Desplazar a la derecha
+    and     w1, w21, #1         // Obtener bit menos significativo
+    
+    // Imprimir bit
+    adr     x0, msg_bit
+    bl      printf
+
+    cmp     w20, #0
+    b.ne    mostrar_bits
+
+    // Nueva línea
+    adr     x0, msg_newline
+    bl      printf
+
+    b       menu_loop
+
+fin_programa:
+    // Epílogo y retorno
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
+    ret
+
+```
+
+## Descripción
+
+Programa 27 de 50 Desplazamiento de Izquierda a Derecha.
+Video de Prueba
+https://asciinema.org/a/689352
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 12/11/2024
+// Descripción: Programa que realiza desplazamientos de izquierda y derecha de numeros.
+
+/*using System;
+
+class Program
+{
+    static void Main()
+    {
+        int opcion, numero, posiciones, resultado;
+
+        // Menú de desplazamientos de bits
+        while (true)
+        {
+            Console.WriteLine("\nDesplazamientos de bits");
+            Console.WriteLine("1. Desplazamiento a la izquierda (LSL)");
+            Console.WriteLine("2. Desplazamiento a la derecha (LSR)");
+            Console.WriteLine("3. Salir");
+            Console.Write("Seleccione una opción: ");
+
+            // Leer opción
+            opcion = int.Parse(Console.ReadLine());
+
+            // Verificar si se quiere salir
+            if (opcion == 3)
+                break;
+
+            // Leer número
+            Console.Write("Ingrese el número: ");
+            numero = int.Parse(Console.ReadLine());
+
+            // Leer posiciones
+            Console.Write("Ingrese posiciones a desplazar: ");
+            posiciones = int.Parse(Console.ReadLine());
+
+            // Realizar desplazamiento según la opción seleccionada
+            switch (opcion)
+            {
+                case 1: // Desplazamiento a la izquierda (LSL)
+                    resultado = numero << posiciones;
+                    break;
+                case 2: // Desplazamiento a la derecha (LSR)
+                    resultado = numero >> posiciones;
+                    break;
+                default:
+                    continue;
+            }
+
+            // Mostrar resultado en decimal
+            Console.WriteLine("Resultado: " + resultado);
+
+            // Mostrar resultado en binario
+            Console.Write("En binario: ");
+            MostrarEnBinario(resultado);
+        }
+    }
+
+    static void MostrarEnBinario(int numero)
+    {
+        for (int i = 31; i >= 0; i--)
+        {
+            int bit = (numero >> i) & 1; // Obtener el bit correspondiente
+            Console.Write(bit);
+        }
+        Console.WriteLine();
+    }
+}
+*/
+
+
+.data
+msg_menu:       .string "\nDesplazamientos de bits\n"
+                .string "1. Desplazamiento a la izquierda (LSL)\n"
+                .string "2. Desplazamiento a la derecha (LSR)\n"
+                .string "3. Salir\n"
+                .string "Seleccione una opción: "
+
+msg_num:        .string "Ingrese el número: "
+msg_pos:        .string "Ingrese posiciones a desplazar: "
+msg_resultado:  .string "Resultado: %d\n"
+msg_binario:    .string "En binario: "
+msg_bit:        .string "%d"
+msg_newline:    .string "\n"
+formato_int:    .string "%d"
+
+opcion:         .word 0
+numero:         .word 0
+posiciones:     .word 0
+
+    .text
+    .global main
+    .align 2
+
+main:
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr     x0, msg_menu
+    bl      printf
+
+    // Leer opción
+    adr     x0, formato_int
+    adr     x1, opcion
+    bl      scanf
+
+    // Verificar salida
+    adr     x0, opcion
+    ldr     w0, [x0]
+    cmp     w0, #3
+    b.eq    fin_programa
+
+    // Leer número
+    adr     x0, msg_num
+    bl      printf
+    adr     x0, formato_int
+    adr     x1, numero
+    bl      scanf
+
+    // Leer posiciones
+    adr     x0, msg_pos
+    bl      printf
+    adr     x0, formato_int
+    adr     x1, posiciones
+    bl      scanf
+
+    // Cargar valores
+    adr     x0, numero
+    ldr     w1, [x0]
+    adr     x0, posiciones
+    ldr     w2, [x0]
+    adr     x0, opcion
+    ldr     w0, [x0]
+
+    // Seleccionar operación
+    cmp     w0, #1
+    b.eq    shift_left
+    cmp     w0, #2
+    b.eq    shift_right
+    b       menu_loop
+
+shift_left:
+    lsl     w1, w1, w2
+    b       mostrar_resultado
+
+shift_right:
+    lsr     w1, w1, w2
+
+mostrar_resultado:
+    // Guardar resultado
+    mov     w19, w1
+
+    // Mostrar en decimal
+    adr     x0, msg_resultado
+    bl      printf
+
+    // Mostrar en binario
+    adr     x0, msg_binario
+    bl      printf
+
+    mov     w20, #32
+mostrar_bits:
+    sub     w20, w20, #1
+    lsr     w21, w19, w20
+    and     w1, w21, #1
+    adr     x0, msg_bit
+    bl      printf
+
+    cmp     w20, #0
+    b.ne    mostrar_bits
+
+    adr     x0, msg_newline
+    bl      printf
+
+    b       menu_loop
+
+fin_programa:
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
+    ret
+
+```
+
+## Descripción
+
+Programa 28 de 50 Operaciones AND, OR, XOR a nivel de bits.
+Video de Prueba
+https://asciinema.org/a/689354
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 12/11/2024
+// Descripción: Establecer, borrar y alternar bits.
+
+/*using System;
+
+class Program
+{
+    static void Main()
+    {
+        int opcion, numero, posicion, resultado;
+
+        // Menú de manipulación de bits
+        while (true)
+        {
+            Console.WriteLine("\nManipulación de bits");
+            Console.WriteLine("1. Establecer bit (SET)");
+            Console.WriteLine("2. Borrar bit (CLEAR)");
+            Console.WriteLine("3. Alternar bit (TOGGLE)");
+            Console.WriteLine("4. Salir");
+            Console.Write("Seleccione una opción: ");
+
+            // Leer opción
+            opcion = int.Parse(Console.ReadLine());
+
+            // Verificar si se quiere salir
+            if (opcion == 4)
+                break;
+
+            // Leer número
+            Console.Write("Ingrese el número: ");
+            numero = int.Parse(Console.ReadLine());
+
+            // Leer posición del bit
+            Console.Write("Ingrese la posición del bit (0-31): ");
+            posicion = int.Parse(Console.ReadLine());
+
+            // Realizar la operación según la opción seleccionada
+            switch (opcion)
+            {
+                case 1: // Establecer bit (SET)
+                    resultado = EstablecerBit(numero, posicion);
+                    break;
+                case 2: // Borrar bit (CLEAR)
+                    resultado = BorrarBit(numero, posicion);
+                    break;
+                case 3: // Alternar bit (TOGGLE)
+                    resultado = AlternarBit(numero, posicion);
+                    break;
+                default:
+                    continue;
+            }
+
+            // Mostrar resultado en decimal
+            Console.WriteLine("Resultado: " + resultado);
+
+            // Mostrar resultado en binario
+            Console.Write("En binario: ");
+            MostrarEnBinario(resultado);
+        }
+    }
+
+    static int EstablecerBit(int numero, int posicion)
+    {
+        return numero | (1 << posicion); // Establecer el bit en la posición dada
+    }
+
+    static int BorrarBit(int numero, int posicion)
+    {
+        return numero & ~(1 << posicion); // Borrar el bit en la posición dada
+    }
+
+    static int AlternarBit(int numero, int posicion)
+    {
+        return numero ^ (1 << posicion); // Alternar el bit en la posición dada
+    }
+
+    static void MostrarEnBinario(int numero)
+    {
+        for (int i = 31; i >= 0; i--)
+        {
+            int bit = (numero >> i) & 1; // Obtener el bit correspondiente
+            Console.Write(bit);
+        }
+        Console.WriteLine();
+    }
+}
+*/
+
+//Ensamblador ARM64bits
+
+  .data
+msg_menu:       .string "\nManipulación de bits\n"
+                .string "1. Establecer bit (SET)\n"
+                .string "2. Borrar bit (CLEAR)\n"
+                .string "3. Alternar bit (TOGGLE)\n"
+                .string "4. Salir\n"
+                .string "Seleccione una opción: "
+
+msg_num:        .string "Ingrese el número: "
+msg_pos:        .string "Ingrese la posición del bit (0-31): "
+msg_resultado:  .string "Resultado: %d\n"
+msg_binario:    .string "En binario: "
+msg_bit:        .string "%d"
+msg_newline:    .string "\n"
+formato_int:    .string "%d"
+
+opcion:         .word 0
+numero:         .word 0
+posicion:       .word 0
+
+    .text
+    .global main
+    .align 2
+
+main:
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr     x0, msg_menu
+    bl      printf
+
+    // Leer opción
+    adr     x0, formato_int
+    adr     x1, opcion
+    bl      scanf
+
+    // Verificar salida
+    adr     x0, opcion
+    ldr     w0, [x0]
+    cmp     w0, #4
+    b.eq    fin_programa
+
+    // Leer número
+    adr     x0, msg_num
+    bl      printf
+    adr     x0, formato_int
+    adr     x1, numero
+    bl      scanf
+
+    // Leer posición
+    adr     x0, msg_pos
+    bl      printf
+    adr     x0, formato_int
+    adr     x1, posicion
+    bl      scanf
+
+    // Cargar valores
+    adr     x0, numero
+    ldr     w1, [x0]        // Número original
+    adr     x0, posicion
+    ldr     w2, [x0]        // Posición
+    adr     x0, opcion
+    ldr     w0, [x0]        // Opción
+
+    // Seleccionar operación
+    cmp     w0, #1
+    b.eq    set_bit
+    cmp     w0, #2
+    b.eq    clear_bit
+    cmp     w0, #3
+    b.eq    toggle_bit
+    b       menu_loop
+
+set_bit:
+    mov     w3, #1          // Crear máscara
+    lsl     w3, w3, w2      // Desplazar 1 a la posición
+    orr     w1, w1, w3      // OR con la máscara
+    b       mostrar_resultado
+
+clear_bit:
+    mov     w3, #1          // Crear máscara
+    lsl     w3, w3, w2      // Desplazar 1 a la posición
+    mvn     w3, w3          // Invertir bits
+    and     w1, w1, w3      // AND con la máscara
+    b       mostrar_resultado
+
+toggle_bit:
+    mov     w3, #1          // Crear máscara
+    lsl     w3, w3, w2      // Desplazar 1 a la posición
+    eor     w1, w1, w3      // XOR con la máscara
+
+mostrar_resultado:
+    // Guardar resultado
+    mov     w19, w1
+
+    // Mostrar en decimal
+    adr     x0, msg_resultado
+    bl      printf
+
+    // Mostrar en binario
+    adr     x0, msg_binario
+    bl      printf
+
+    mov     w20, #32
+mostrar_bits:
+    sub     w20, w20, #1
+    lsr     w21, w19, w20
+    and     w1, w21, #1
+    adr     x0, msg_bit
+    bl      printf
+
+    cmp     w20, #0
+    b.ne    mostrar_bits
+
+    adr     x0, msg_newline
+    bl      printf
+
+    b       menu_loop
+
+fin_programa:
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
+    ret
+
+```
+
+## Descripción
+
+Programa 29 de 50 Desplazamientos a la izquierda y derecha.
+Video de Prueba
+https://asciinema.org/a/689356
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 12/11/2024
+// Descripción: Programa que cuenta el numero de bits activados en un numero.
+
+/*using System;
+
+class Program
+{
+    static void Main()
+    {
+        int numero;
+
+        // Solicitar número
+        Console.Write("Ingrese un número: ");
+        numero = int.Parse(Console.ReadLine());
+
+        // Contar bits activados (1)
+        int contador = ContarBitsActivados(numero);
+
+        // Mostrar resultado
+        Console.WriteLine($"Número de bits activados: {contador}");
+
+        // Mostrar representación binaria
+        Console.Write("Representación binaria: ");
+        MostrarEnBinario(numero);
+    }
+
+    static int ContarBitsActivados(int numero)
+    {
+        int contador = 0;
+        
+        while (numero != 0)
+        {
+            // Obtener el bit menos significativo
+            contador += numero & 1;
+            // Desplazar el número a la derecha
+            numero >>= 1;
+        }
+
+        return contador;
+    }
+
+    static void MostrarEnBinario(int numero)
+    {
+        // Mostrar cada bit en la representación binaria de 32 bits
+        for (int i = 31; i >= 0; i--)
+        {
+            int bit = (numero >> i) & 1; // Obtener el bit correspondiente
+            Console.Write(bit);
+        }
+        Console.WriteLine();
+    }
+}
+*/
+
+//Ensamblador ARM64bits
+
+ .data
+msg_ingreso:    .string "Ingrese un número: "
+msg_resultado:  .string "Número de bits activados: %d\n"
+msg_binario:    .string "Representación binaria: "
+msg_bit:        .string "%d"
+msg_newline:    .string "\n"
+formato_int:    .string "%d"
+
+numero:         .word 0
+
+    .text
+    .global main
+    .align 2
+
+main:
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+    // Solicitar número
+    adr     x0, msg_ingreso
+    bl      printf
+
+    // Leer número
+    adr     x0, formato_int
+    adr     x1, numero
+    bl      scanf
+
+    // Cargar número
+    adr     x0, numero
+    ldr     w1, [x0]
+    mov     w19, w1          // Guardar copia para mostrar binario
+
+    // Contador de bits
+    mov     w2, #0          // Inicializar contador
+
+contar_loop:
+    cbz     w1, fin_conteo  // Si el número es 0, terminar
+    and     w3, w1, #1      // Obtener bit menos significativo
+    add     w2, w2, w3      // Sumar al contador si es 1
+    lsr     w1, w1, #1      // Desplazar a la derecha
+    b       contar_loop
+
+fin_conteo:
+    // Mostrar resultado
+    mov     w1, w2
+    adr     x0, msg_resultado
+    bl      printf
+
+    // Mostrar representación binaria
+    adr     x0, msg_binario
+    bl      printf
+
+    mov     w20, #32
+mostrar_bits:
+    sub     w20, w20, #1
+    lsr     w21, w19, w20
+    and     w1, w21, #1
+    adr     x0, msg_bit
+    bl      printf
+
+    cmp     w20, #0
+    b.ne    mostrar_bits
+
+    adr     x0, msg_newline
+    bl      printf
+
+    // Retorno
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
+    ret
+```
+
+## Descripción
+
+Programa 30 de 50 Establecer, borrar y alternar bits.
+Video de Prueba
+https://asciinema.org/a/689359
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 12/11/2024
+// Descripción: Programa que calcula el MCD y MCM.
+
+/*using System;
+
+class Program
+{
+    static void Main()
+    {
+        int opcion, numero1, numero2;
+
+        do
+        {
+            // Mostrar menú
+            Console.WriteLine("\nCálculo de MCD y MCM");
+            Console.WriteLine("1. Calcular MCD");
+            Console.WriteLine("2. Calcular MCM");
+            Console.WriteLine("3. Salir");
+            Console.Write("Seleccione una opción: ");
+            opcion = int.Parse(Console.ReadLine());
+
+            // Verificar opción
+            if (opcion == 3)
+            {
+                break;  // Salir del programa
+            }
+
+            // Leer los dos números
+            Console.Write("Ingrese el primer número: ");
+            numero1 = int.Parse(Console.ReadLine());
+
+            Console.Write("Ingrese el segundo número: ");
+            numero2 = int.Parse(Console.ReadLine());
+
+            if (opcion == 1)
+            {
+                // Calcular y mostrar el MCD
+                int mcd = CalcularMCD(numero1, numero2);
+                Console.WriteLine($"El MCD es: {mcd}");
+            }
+            else if (opcion == 2)
+            {
+                // Calcular y mostrar el MCM
+                int mcm = CalcularMCM(numero1, numero2);
+                Console.WriteLine($"El MCM es: {mcm}");
+            }
+        }
+        while (opcion != 3);
+    }
+
+    // Función para calcular el MCD utilizando el algoritmo de Euclides
+    static int CalcularMCD(int a, int b)
+    {
+        while (b != 0)
+        {
+            int residuo = a % b;
+            a = b;
+            b = residuo;
+        }
+        return a;
+    }
+
+    // Función para calcular el MCM usando la fórmula MCM = (a * b) / MCD
+    static int CalcularMCM(int a, int b)
+    {
+        int mcd = CalcularMCD(a, b);
+        return (a * b) / mcd;
+    }
+}
+*/
+
+ .data
+msg_menu:       .string "\nCálculo de MCD y MCM\n"
+                .string "1. Calcular MCD\n"
+                .string "2. Calcular MCM\n"
+                .string "3. Salir\n"
+                .string "Seleccione una opción: "
+
+msg_num1:       .string "Ingrese el primer número: "
+msg_num2:       .string "Ingrese el segundo número: "
+msg_mcd:        .string "El MCD es: %d\n"
+msg_mcm:        .string "El MCM es: %d\n"
+formato_int:    .string "%d"
+
+opcion:         .word 0
+numero1:        .word 0
+numero2:        .word 0
+
+    .text
+    .global main
+    .align 2
+
+// Función principal
+main:
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr     x0, msg_menu
+    bl      printf
+
+    // Leer opción
+    adr     x0, formato_int
+    adr     x1, opcion
+    bl      scanf
+
+    // Verificar salida
+    adr     x0, opcion
+    ldr     w0, [x0]
+    cmp     w0, #3
+    b.eq    fin_programa
+
+    // Leer números
+    adr     x0, msg_num1
+    bl      printf
+    adr     x0, formato_int
+    adr     x1, numero1
+    bl      scanf
+
+    adr     x0, msg_num2
+    bl      printf
+    adr     x0, formato_int
+    adr     x1, numero2
+    bl      scanf
+
+    // Cargar números en registros
+    adr     x0, numero1
+    ldr     w19, [x0]        // Primer número en w19
+    adr     x0, numero2
+    ldr     w20, [x0]        // Segundo número en w20
+
+    // Verificar opción
+    adr     x0, opcion
+    ldr     w0, [x0]
+    cmp     w0, #1
+    b.eq    calcular_mcd
+    cmp     w0, #2
+    b.eq    calcular_mcm
+    b       menu_loop
+
+calcular_mcd:
+    // Preservar valores originales para MCM
+    mov     w21, w19         // Guardar primer número
+    mov     w22, w20         // Guardar segundo número
+
+mcd_loop:
+    // Algoritmo de Euclides
+    cmp     w20, #0
+    b.eq    mostrar_mcd
+    
+    // Calcular residuo
+    sdiv    w23, w19, w20    // División
+    msub    w23, w23, w20, w19  // Residuo = Dividendo - (Cociente * Divisor)
+    
+    // Actualizar valores
+    mov     w19, w20         // a = b
+    mov     w20, w23         // b = residuo
+    b       mcd_loop
+
+mostrar_mcd:
+    mov     w1, w19          // MCD está en w19
+    adr     x0, msg_mcd
+    bl      printf
+    b       menu_loop
+
+calcular_mcm:
+    // Primero calculamos el MCD
+    mov     w21, w19         // Guardar primer número
+    mov     w22, w20         // Guardar segundo número
+
+mcm_mcd_loop:
+    cmp     w20, #0
+    b.eq    calcular_mcm_final
+    
+    sdiv    w23, w19, w20
+    msub    w23, w23, w20, w19
+    
+    mov     w19, w20
+    mov     w20, w23
+    b       mcm_mcd_loop
+
+calcular_mcm_final:
+    // MCM = (a * b) / MCD
+    mul     w20, w21, w22    // a * b
+    sdiv    w20, w20, w19    // Dividir por MCD
+
+mostrar_mcm:
+    mov     w1, w20
+    adr     x0, msg_mcm
+    bl      printf
+    b       menu_loop
+
+fin_programa:
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
+    ret
 ```
