@@ -4743,3 +4743,2213 @@ fin_programa:
     ldp     x29, x30, [sp], 16
     ret
 ```
+
+## Descripción
+
+Programa 31 de 50 Mínimo Común Múltiplo (MCM).
+Video de Prueba
+https://asciinema.org/a/690840
+
+## Código Completo
+```c
+
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que calcula el MCM.
+
+/*using System;
+
+class Program
+{
+    static void Main()
+    {
+        int opcion, numero1, numero2;
+
+        do
+        {
+            // Mostrar menú
+            Console.WriteLine("\nCálculo de MCD y MCM");
+            Console.WriteLine("1. Calcular MCD");
+            Console.WriteLine("2. Calcular MCM");
+            Console.WriteLine("3. Salir");
+            Console.Write("Seleccione una opción: ");
+            opcion = int.Parse(Console.ReadLine());
+
+            // Verificar opción
+            if (opcion == 3)
+            {
+                break;  // Salir del programa
+            }
+
+            // Leer los dos números
+            Console.Write("Ingrese el primer número: ");
+            numero1 = int.Parse(Console.ReadLine());
+
+            Console.Write("Ingrese el segundo número: ");
+            numero2 = int.Parse(Console.ReadLine());
+
+            if (opcion == 1)
+            {
+                // Calcular y mostrar el MCD
+                int mcd = CalcularMCD(numero1, numero2);
+                Console.WriteLine($"El MCD es: {mcd}");
+            }
+            else if (opcion == 2)
+            {
+                // Calcular y mostrar el MCM
+                int mcm = CalcularMCM(numero1, numero2);
+                Console.WriteLine($"El MCM es: {mcm}");
+            }
+        }
+        while (opcion != 3);
+    }
+
+    // Función para calcular el MCD utilizando el algoritmo de Euclides
+    static int CalcularMCD(int a, int b)
+    {
+        while (b != 0)
+        {
+            int residuo = a % b;
+            a = b;
+            b = residuo;
+        }
+        return a;
+    }
+
+    // Función para calcular el MCM usando la fórmula MCM = (a * b) / MCD
+    static int CalcularMCM(int a, int b)
+    {
+        int mcd = CalcularMCD(a, b);
+        return (a * b) / mcd;
+    }
+}
+*/
+
+ .data
+msg_menu:       .string "\nCálculo de MCD y MCM\n"
+                .string "1. Calcular MCD\n"
+                .string "2. Calcular MCM\n"
+                .string "3. Salir\n"
+                .string "Seleccione una opción: "
+
+msg_num1:       .string "Ingrese el primer número: "
+msg_num2:       .string "Ingrese el segundo número: "
+msg_mcd:        .string "El MCD es: %d\n"
+msg_mcm:        .string "El MCM es: %d\n"
+formato_int:    .string "%d"
+
+opcion:         .word 0
+numero1:        .word 0
+numero2:        .word 0
+
+    .text
+    .global main
+    .align 2
+
+// Función principal
+main:
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr     x0, msg_menu
+    bl      printf
+
+    // Leer opción
+    adr     x0, formato_int
+    adr     x1, opcion
+    bl      scanf
+
+    // Verificar salida
+    adr     x0, opcion
+    ldr     w0, [x0]
+    cmp     w0, #3
+    b.eq    fin_programa
+
+    // Leer números
+    adr     x0, msg_num1
+    bl      printf
+    adr     x0, formato_int
+    adr     x1, numero1
+    bl      scanf
+
+    adr     x0, msg_num2
+    bl      printf
+    adr     x0, formato_int
+    adr     x1, numero2
+    bl      scanf
+
+    // Cargar números en registros
+    adr     x0, numero1
+    ldr     w19, [x0]        // Primer número en w19
+    adr     x0, numero2
+    ldr     w20, [x0]        // Segundo número en w20
+
+    // Verificar opción
+    adr     x0, opcion
+    ldr     w0, [x0]
+    cmp     w0, #1
+    b.eq    calcular_mcd
+    cmp     w0, #2
+    b.eq    calcular_mcm
+    b       menu_loop
+
+calcular_mcd:
+    // Preservar valores originales para MCM
+    mov     w21, w19         // Guardar primer número
+    mov     w22, w20         // Guardar segundo número
+
+mcd_loop:
+    // Algoritmo de Euclides
+    cmp     w20, #0
+    b.eq    mostrar_mcd
+    
+    // Calcular residuo
+    sdiv    w23, w19, w20    // División
+    msub    w23, w23, w20, w19  // Residuo = Dividendo - (Cociente * Divisor)
+    
+    // Actualizar valores
+    mov     w19, w20         // a = b
+    mov     w20, w23         // b = residuo
+    b       mcd_loop
+
+mostrar_mcd:
+    mov     w1, w19          // MCD está en w19
+    adr     x0, msg_mcd
+    bl      printf
+    b       menu_loop
+
+calcular_mcm:
+    // Primero calculamos el MCD
+    mov     w21, w19         // Guardar primer número
+    mov     w22, w20         // Guardar segundo número
+
+mcm_mcd_loop:
+    cmp     w20, #0
+    b.eq    calcular_mcm_final
+    
+    sdiv    w23, w19, w20
+    msub    w23, w23, w20, w19
+    
+    mov     w19, w20
+    mov     w20, w23
+    b       mcm_mcd_loop
+
+calcular_mcm_final:
+    // MCM = (a * b) / MCD
+    mul     w20, w21, w22    // a * b
+    sdiv    w20, w20, w19    // Dividir por MCD
+
+mostrar_mcm:
+    mov     w1, w20
+    adr     x0, msg_mcm
+    bl      printf
+    b       menu_loop
+
+fin_programa:
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
+    ret
+
+```
+
+## Descripción
+
+Programa 32 de 50 Potencia (x^n).
+Video de Prueba
+https://asciinema.org/a/690843
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que calcula el exponente de un numero.
+
+/*using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Solicitar base y exponente
+        Console.Write("Ingrese la base (x): ");
+        int baseNum = int.Parse(Console.ReadLine());
+
+        Console.Write("Ingrese el exponente (n): ");
+        int exponent = int.Parse(Console.ReadLine());
+
+        // Verificar si el exponente es negativo
+        if (exponent < 0)
+        {
+            Console.WriteLine("Error: exponente negativo no soportado");
+            return;
+        }
+
+        // Caso especial: exponente = 0
+        if (exponent == 0)
+        {
+            Console.WriteLine($"El resultado de {baseNum}^{exponent} es: 1");
+            return;
+        }
+
+        // Calcular la potencia
+        int result = 1;
+        for (int i = 1; i <= exponent; i++)
+        {
+            result *= baseNum;
+        }
+
+        // Mostrar el resultado
+        Console.WriteLine($"El resultado de {baseNum}^{exponent} es: {result}");
+    }
+}
+*/
+
+.data
+msg_base:       .string "Ingrese la base (x): "
+msg_exp:        .string "Ingrese el exponente (n): "
+msg_resultado:  .string "El resultado de %d^%d es: %d\n"
+msg_error:      .string "Error: exponente negativo no soportado\n"
+formato_int:    .string "%d"
+
+base:           .word 0
+exponente:      .word 0
+
+    .text
+    .global main
+    .align 2
+
+main:
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+    // Solicitar base
+    adr     x0, msg_base
+    bl      printf
+
+    adr     x0, formato_int
+    adr     x1, base
+    bl      scanf
+
+    // Solicitar exponente
+    adr     x0, msg_exp
+    bl      printf
+
+    adr     x0, formato_int
+    adr     x1, exponente
+    bl      scanf
+
+    // Cargar valores
+    adr     x0, base
+    ldr     w19, [x0]        // Base en w19
+    adr     x0, exponente
+    ldr     w20, [x0]        // Exponente en w20
+
+    // Verificar si exponente es negativo
+    cmp     w20, #0
+    b.lt    error_exp
+
+    // Caso especial: exponente = 0
+    cmp     w20, #0
+    b.eq    exp_cero
+
+    // Calcular potencia
+    mov     w21, w19         // Resultado inicial = base
+    mov     w22, #1          // Contador
+
+potencia_loop:
+    cmp     w22, w20
+    b.eq    mostrar_resultado
+    mul     w21, w21, w19
+    add     w22, w22, #1
+    b       potencia_loop
+
+exp_cero:
+    mov     w21, #1
+    b       mostrar_resultado
+
+error_exp:
+    adr     x0, msg_error
+    bl      printf
+    b       fin_programa
+
+mostrar_resultado:
+    adr     x0, msg_resultado
+    mov     w1, w19          // Base
+    mov     w2, w20          // Exponente
+    mov     w3, w21          // Resultado
+    bl      printf
+
+fin_programa:
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
+    ret
+
+
+```
+
+## Descripción
+
+Programa 33 de 50 Suma de elementos en un arreglo.
+Video de Prueba
+https://asciinema.org/a/690847
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que realiza la Suma de elementos en un arreglo.
+
+/*using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        List<int> array = new List<int>();
+        
+        Console.WriteLine("Ingrese los números del arreglo (ingrese 0 para terminar):");
+        
+        while (true)
+        {
+            Console.Write("Ingrese un número: ");
+            int numero = int.Parse(Console.ReadLine());
+            
+            if (numero == 0)
+                break;
+            
+            array.Add(numero);
+        }
+        
+        if (array.Count == 0)
+        {
+            Console.WriteLine("El arreglo está vacío.");
+            return;
+        }
+        
+        int suma = 0;
+        foreach (int num in array)
+        {
+            suma += num;
+        }
+        
+        Console.WriteLine($"Resultado de la suma: {suma}");
+    }
+}
+*/
+
+.data
+    msg_ingreso: .string "Ingrese los números del arreglo (ingrese 0 para terminar):\n"
+    msg_pedir_numero: .string "Ingrese un número: "
+    msg_array_vacio: .string "El arreglo está vacío.\n"
+    msg_resultado: .string "Resultado de la suma: %d\n"
+    formato_int: .string "%d"
+    
+    array: .zero 400  // Espacio para 100 enteros (4 bytes cada uno)
+    tam_array: .word 0
+
+.text
+.global main
+.align 2
+
+main:
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+
+    // Mostrar mensaje de ingreso
+    adr x0, msg_ingreso
+    bl printf
+
+    // Inicializar puntero de array y tamaño
+    adr x20, array
+    adr x21, tam_array
+    mov w22, #0  // Índice del array
+
+ingresar_numeros:
+    // Mostrar prompt
+    adr x0, msg_pedir_numero
+    bl printf
+
+    // Leer número
+    adr x0, formato_int
+    sub sp, sp, #16
+    mov x1, sp
+    bl scanf
+
+    // Cargar número ingresado
+    ldr w23, [sp]
+    add sp, sp, #16
+
+    // Verificar si es cero
+    cbz w23, fin_ingreso
+
+    // Guardar número en el array
+    str w23, [x20, w22, SXTW #2]
+    add w22, w22, #1
+
+    // Continuar ingresando números
+    b ingresar_numeros
+
+fin_ingreso:
+    // Guardar tamaño del array
+    str w22, [x21]
+
+    // Verificar si el array está vacío
+    cbz w22, array_vacio
+
+    // Sumar elementos
+    mov w24, #0  // Suma
+    mov w25, #0  // Índice
+
+suma_loop:
+    ldr w26, [x20, w25, SXTW #2]
+    add w24, w24, w26
+    add w25, w25, #1
+    cmp w25, w22
+    b.lt suma_loop
+
+    // Mostrar resultado
+    adr x0, msg_resultado
+    mov w1, w24
+    bl printf
+    b fin_programa
+
+array_vacio:
+    adr x0, msg_array_vacio
+    bl printf
+
+fin_programa:
+    mov w0, #0
+    ldp x29, x30, [sp], 16
+    ret
+```
+
+## Descripción
+
+Programa 34 de 50 Invertir los elementos de un arreglo.
+Video de Prueba
+https://asciinema.org/a/690850
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que invierte los elementos de un arreglo.
+
+/*using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main()
+    {
+        List<int> array = new List<int>();
+        
+        Console.WriteLine("Ingrese los números del arreglo (ingrese 0 para terminar):");
+        
+        while (true)
+        {
+            Console.Write("Ingrese un número: ");
+            int numero = int.Parse(Console.ReadLine());
+            
+            if (numero == 0)
+                break;
+            
+            array.Add(numero);
+        }
+        
+        if (array.Count == 0)
+        {
+            Console.WriteLine("El arreglo está vacío.");
+            return;
+        }
+        
+        // Invertir el arreglo
+        array.Reverse();
+        
+        // Mostrar arreglo invertido
+        Console.Write("Arreglo invertido: ");
+        foreach (int num in array)
+        {
+            Console.Write($"{num} ");
+        }
+        Console.WriteLine();
+    }
+}
+*/
+
+.data
+    msg_ingreso: .string "Ingrese los números del arreglo (ingrese 0 para terminar):\n"
+    msg_pedir_numero: .string "Ingrese un número: "
+    msg_array_vacio: .string "El arreglo está vacío.\n"
+    msg_resultado: .string "Arreglo invertido: "
+    msg_numero: .string "%d "
+    msg_newline: .string "\n"
+    formato_int: .string "%d"
+    
+    array: .zero 400  // Espacio para 100 enteros (4 bytes cada uno)
+    tam_array: .word 0
+
+.text
+.global main
+.align 2
+
+main:
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+
+    // Mostrar mensaje de ingreso
+    adr x0, msg_ingreso
+    bl printf
+
+    // Inicializar puntero de array y tamaño
+    adr x20, array
+    adr x21, tam_array
+    mov w22, #0  // Índice del array
+
+ingresar_numeros:
+    // Mostrar prompt
+    adr x0, msg_pedir_numero
+    bl printf
+
+    // Leer número
+    adr x0, formato_int
+    sub sp, sp, #16
+    mov x1, sp
+    bl scanf
+
+    // Cargar número ingresado
+    ldr w23, [sp]
+    add sp, sp, #16
+
+    // Verificar si es cero
+    cbz w23, fin_ingreso
+
+    // Guardar número en el array
+    str w23, [x20, w22, SXTW #2]
+    add w22, w22, #1
+
+    // Continuar ingresando números
+    b ingresar_numeros
+
+fin_ingreso:
+    // Guardar tamaño del array
+    str w22, [x21]
+
+    // Verificar si el array está vacío
+    cbz w22, array_vacio
+
+    // Invertir el arreglo
+    mov w24, #0  // Índice inicial
+    sub w25, w22, #1  // Índice final
+
+invertir_loop:
+    cmp w24, w25
+    b.ge mostrar_array
+
+    // Cargar elementos a intercambiar
+    ldr w26, [x20, w24, SXTW #2]
+    ldr w27, [x20, w25, SXTW #2]
+
+    // Intercambiar
+    str w27, [x20, w24, SXTW #2]
+    str w26, [x20, w25, SXTW #2]
+
+    // Actualizar índices
+    add w24, w24, #1
+    sub w25, w25, #1
+
+    b invertir_loop
+
+mostrar_array:
+    // Mostrar mensaje de resultado
+    adr x0, msg_resultado
+    bl printf
+
+    // Reiniciar índice
+    mov w24, #0
+
+mostrar_loop:
+    // Mostrar número
+    ldr w1, [x20, w24, SXTW #2]
+    adr x0, msg_numero
+    bl printf
+
+    // Incrementar índice
+    add w24, w24, #1
+
+    // Verificar si terminamos
+    cmp w24, w22
+    b.lt mostrar_loop
+
+    // Nueva línea
+    adr x0, msg_newline
+    bl printf
+    b fin_programa
+
+array_vacio:
+    adr x0, msg_array_vacio
+    bl printf
+
+fin_programa:
+    mov w0, #0
+    ldp x29, x30, [sp], 16
+    ret
+
+```
+## Descripción
+
+Programa 35 de 50 Rotación de un arreglo (izquierda/derecha).
+Video de Prueba
+https://asciinema.org/a/690861
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que Rotación de un arreglo (izquierda/derecha) .
+
+/*using System;
+
+class Program
+{
+    static void Main()
+    {
+        int opcion, numero, posiciones, resultado;
+
+        // Menú de desplazamientos de bits
+        while (true)
+        {
+            Console.WriteLine("\nDesplazamientos de bits");
+            Console.WriteLine("1. Desplazamiento a la izquierda (LSL)");
+            Console.WriteLine("2. Desplazamiento a la derecha (LSR)");
+            Console.WriteLine("3. Salir");
+            Console.Write("Seleccione una opción: ");
+
+            // Leer opción
+            opcion = int.Parse(Console.ReadLine());
+
+            // Verificar si se quiere salir
+            if (opcion == 3)
+                break;
+
+            // Leer número
+            Console.Write("Ingrese el número: ");
+            numero = int.Parse(Console.ReadLine());
+
+            // Leer posiciones
+            Console.Write("Ingrese posiciones a desplazar: ");
+            posiciones = int.Parse(Console.ReadLine());
+
+            // Realizar desplazamiento según la opción seleccionada
+            switch (opcion)
+            {
+                case 1: // Desplazamiento a la izquierda (LSL)
+                    resultado = numero << posiciones;
+                    break;
+                case 2: // Desplazamiento a la derecha (LSR)
+                    resultado = numero >> posiciones;
+                    break;
+                default:
+                    continue;
+            }
+
+            // Mostrar resultado en decimal
+            Console.WriteLine("Resultado: " + resultado);
+
+            // Mostrar resultado en binario
+            Console.Write("En binario: ");
+            MostrarEnBinario(resultado);
+        }
+    }
+
+    static void MostrarEnBinario(int numero)
+    {
+        for (int i = 31; i >= 0; i--)
+        {
+            int bit = (numero >> i) & 1; // Obtener el bit correspondiente
+            Console.Write(bit);
+        }
+        Console.WriteLine();
+    }
+}
+*/
+
+.data
+msg_menu:       .string "\nDesplazamientos de bits\n"
+                .string "1. Desplazamiento a la izquierda (LSL)\n"
+                .string "2. Desplazamiento a la derecha (LSR)\n"
+                .string "3. Salir\n"
+                .string "Seleccione una opción: "
+
+msg_num:        .string "Ingrese el número: "
+msg_pos:        .string "Ingrese posiciones a desplazar: "
+msg_resultado:  .string "Resultado: %d\n"
+msg_binario:    .string "En binario: "
+msg_bit:        .string "%d"
+msg_newline:    .string "\n"
+formato_int:    .string "%d"
+
+opcion:         .word 0
+numero:         .word 0
+posiciones:     .word 0
+
+    .text
+    .global main
+    .align 2
+
+main:
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr     x0, msg_menu
+    bl      printf
+
+    // Leer opción
+    adr     x0, formato_int
+    adr     x1, opcion
+    bl      scanf
+
+    // Verificar salida
+    adr     x0, opcion
+    ldr     w0, [x0]
+    cmp     w0, #3
+    b.eq    fin_programa
+
+    // Leer número
+    adr     x0, msg_num
+    bl      printf
+    adr     x0, formato_int
+    adr     x1, numero
+    bl      scanf
+
+    // Leer posiciones
+    adr     x0, msg_pos
+    bl      printf
+    adr     x0, formato_int
+    adr     x1, posiciones
+    bl      scanf
+
+    // Cargar valores
+    adr     x0, numero
+    ldr     w1, [x0]
+    adr     x0, posiciones
+    ldr     w2, [x0]
+    adr     x0, opcion
+    ldr     w0, [x0]
+
+    // Seleccionar operación
+    cmp     w0, #1
+    b.eq    shift_left
+    cmp     w0, #2
+    b.eq    shift_right
+    b       menu_loop
+
+shift_left:
+    lsl     w1, w1, w2
+    b       mostrar_resultado
+
+shift_right:
+    lsr     w1, w1, w2
+
+mostrar_resultado:
+    // Guardar resultado
+    mov     w19, w1
+
+    // Mostrar en decimal
+    adr     x0, msg_resultado
+    bl      printf
+
+    // Mostrar en binario
+    adr     x0, msg_binario
+    bl      printf
+
+    mov     w20, #32
+mostrar_bits:
+    sub     w20, w20, #1
+    lsr     w21, w19, w20
+    and     w1, w21, #1
+    adr     x0, msg_bit
+    bl      printf
+
+    cmp     w20, #0
+    b.ne    mostrar_bits
+
+    adr     x0, msg_newline
+    bl      printf
+
+    b       menu_loop
+
+fin_programa:
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
+    ret
+```
+## Descripción
+
+Programa 36 de 50 Encontrar el segundo elemento más grande.
+Video de Prueba
+https://asciinema.org/a/690865
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que encuentra el segundo elementos mas grande en un arreglo.
+
+/*using System;
+
+class Program
+{
+    // Mensajes del menú
+    static readonly string msgMenu = "\nBúsqueda del Segundo Elemento más Grande\n" +
+                                     "1. Encontrar segundo mayor\n" +
+                                     "2. Mostrar arreglo\n" +
+                                     "3. Salir\n" +
+                                     "Seleccione una opción: ";
+    static readonly string msgArray = "Arreglo actual: ";
+    static readonly string msgMax = "El elemento más grande es: {0}\n";
+    static readonly string msgSecond = "El segundo elemento más grande es: {0}\n";
+    static readonly string msgError = "No existe un segundo elemento más grande (todos son iguales)\n";
+    static readonly string msgNewline = "\n";
+
+    // Arreglo de ejemplo
+    static int[] array = { 12, 35, 1, 10, 34, 1, 35, 8, 23, 19 };
+
+    static void Main()
+    {
+        while (true)
+        {
+            // Mostrar menú y leer opción
+            Console.Write(msgMenu);
+            int opcion = int.Parse(Console.ReadLine());
+
+            // Verificar opción de salida
+            if (opcion == 3)
+            {
+                Console.WriteLine("Saliendo del programa...");
+                break;
+            }
+            else if (opcion == 1)
+            {
+                EncontrarSegundoMayor();
+            }
+            else if (opcion == 2)
+            {
+                MostrarArreglo();
+            }
+            else
+            {
+                Console.WriteLine("Opción inválida, intente nuevamente.");
+            }
+        }
+    }
+
+    static void EncontrarSegundoMayor()
+    {
+        if (array.Length < 2)
+        {
+            Console.WriteLine(msgError);
+            return;
+        }
+
+        int maxNum = array[0];
+        int secondMax = int.MinValue;
+        
+        foreach (int num in array)
+        {
+            if (num > maxNum)
+            {
+                secondMax = maxNum;
+                maxNum = num;
+            }
+            else if (num > secondMax && num < maxNum)
+            {
+                secondMax = num;
+            }
+        }
+
+        if (secondMax == int.MinValue)
+        {
+            Console.WriteLine(msgError);
+        }
+        else
+        {
+            Console.WriteLine(msgMax, maxNum);
+            Console.WriteLine(msgSecond, secondMax);
+        }
+    }
+
+    static void MostrarArreglo()
+    {
+        Console.WriteLine(msgArray);
+        foreach (int num in array)
+        {
+            Console.Write($"{num} ");
+        }
+        Console.WriteLine(msgNewline);
+    }
+}
+*/
+
+
+.data
+    msg_menu: 
+        .string "\nBúsqueda del Segundo Elemento más Grande\n"
+        .string "1. Encontrar segundo mayor\n"
+        .string "2. Mostrar arreglo\n"
+        .string "3. Salir\n"
+        .string "Seleccione una opción: "
+    
+    msg_array: .string "Arreglo actual: "
+    msg_max: .string "El elemento más grande es: %d\n"
+    msg_second: .string "El segundo elemento más grande es: %d\n"
+    msg_error: .string "No existe un segundo elemento más grande (todos son iguales)\n"
+    msg_num: .string "%d "
+    msg_newline: .string "\n"
+    formato_int: .string "%d"
+    
+    // Arreglo y variables
+    array: .word 12, 35, 1, 10, 34, 1, 35, 8, 23, 19  // Arreglo de ejemplo con 10 elementos
+    array_size: .word 10
+    opcion: .word 0
+    max_num: .word 0
+    second_max: .word 0
+
+.text
+.global main
+.align 2
+
+main:
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr x0, msg_menu
+    bl printf
+
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
+
+    // Verificar opción
+    adr x0, opcion
+    ldr w0, [x0]
+    
+    cmp w0, #3
+    b.eq fin_programa
+    
+    cmp w0, #1
+    b.eq encontrar_segundo
+    
+    cmp w0, #2
+    b.eq mostrar_arreglo
+    
+    b menu_loop
+
+encontrar_segundo:
+    // Inicializar variables
+    adr x20, array        // Dirección base del arreglo
+    adr x21, array_size
+    ldr w21, [x21]        // Tamaño del arreglo
+    
+    // Encontrar el máximo primero
+    ldr w22, [x20]        // max_num = array[0]
+    mov w23, w22          // second_max = array[0]
+    mov w24, #1           // índice = 1
+
+encontrar_max_loop:
+    ldr w25, [x20, w24, SXTW #2]  // Cargar elemento actual
+    
+    // Comparar con máximo actual
+    cmp w25, w22
+    b.le no_es_max       // Si es menor o igual, saltar
+    mov w23, w22         // El antiguo máximo se convierte en segundo
+    mov w22, w25         // Actualizar máximo
+    b continuar_max
+
+no_es_max:
+    // Comparar con segundo máximo
+    cmp w25, w23
+    b.le continuar_max   // Si es menor o igual, saltar
+    cmp w25, w22
+    b.eq continuar_max   // Si es igual al máximo, saltar
+    mov w23, w25         // Actualizar segundo máximo
+
+continuar_max:
+    add w24, w24, #1     // Incrementar índice
+    cmp w24, w21         // Comparar con tamaño
+    b.lt encontrar_max_loop
+
+    // Verificar si encontramos un segundo máximo válido
+    cmp w22, w23
+    b.eq no_segundo_max
+
+    // Mostrar resultados
+    adr x0, msg_max
+    mov w1, w22
+    bl printf
+    
+    adr x0, msg_second
+    mov w1, w23
+    bl printf
+    b menu_loop
+
+no_segundo_max:
+    adr x0, msg_error
+    bl printf
+    b menu_loop
+
+mostrar_arreglo:
+    adr x0, msg_array
+    bl printf
+    
+    adr x20, array
+    adr x21, array_size
+    ldr w21, [x21]
+    mov w22, #0          // índice
+
+mostrar_loop:
+    ldr w1, [x20, w22, SXTW #2]
+    adr x0, msg_num
+    bl printf
+    
+    add w22, w22, #1
+    cmp w22, w21
+    b.lt mostrar_loop
+    
+    adr x0, msg_newline
+    bl printf
+    b menu_loop
+
+fin_programa:
+    mov w0, #0
+    ldp x29, x30, [sp], 16
+    ret
+
+```
+## Descripción
+
+Programa 37 de 50 Implementar una pila usando un arreglo.
+Video de Prueba
+https://asciinema.org/a/690869
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que Implementa una pila usando un arreglo.
+
+/*using System;
+using System.Collections.Generic;
+
+class QueueProgram
+{
+    // Mensajes del menú y mensajes informativos
+    static readonly string msgMenu = "\nOperaciones de Cola\n" +
+                                     "1. Enqueue (Insertar)\n" +
+                                     "2. Dequeue (Eliminar)\n" +
+                                     "3. Peek (Ver frente)\n" +
+                                     "4. Mostrar cola\n" +
+                                     "5. Salir\n" +
+                                     "Seleccione una opción: ";
+    static readonly string msgEnqueue = "Ingrese valor a insertar: ";
+    static readonly string msgDequeue = "Elemento eliminado: {0}\n";
+    static readonly string msgPeek = "Elemento al frente: {0}\n";
+    static readonly string msgEmpty = "La cola está vacía\n";
+    static readonly string msgFull = "La cola está llena\n";
+    static readonly string msgQueue = "Contenido de la cola: ";
+    static readonly string msgNewline = "\n";
+
+    // Cola y variables
+    static int queueSize = 10;
+    static int[] queue = new int[queueSize];
+    static int front = -1;
+    static int rear = -1;
+
+    static void Main()
+    {
+        while (true)
+        {
+            // Mostrar menú
+            Console.Write(msgMenu);
+            int opcion = int.Parse(Console.ReadLine());
+
+            switch (opcion)
+            {
+                case 1:
+                    Enqueue();
+                    break;
+                case 2:
+                    Dequeue();
+                    break;
+                case 3:
+                    Peek();
+                    break;
+                case 4:
+                    MostrarCola();
+                    break;
+                case 5:
+                    Console.WriteLine("Saliendo del programa...");
+                    return;
+                default:
+                    Console.WriteLine("Opción inválida, intente nuevamente.");
+                    break;
+            }
+        }
+    }
+
+    static void Enqueue()
+    {
+        // Verificar si la cola está llena
+        if (rear == queueSize - 1)
+        {
+            Console.WriteLine(msgFull);
+            return;
+        }
+
+        // Leer valor a insertar
+        Console.Write(msgEnqueue);
+        int valor = int.Parse(Console.ReadLine());
+
+        // Si es el primer elemento
+        if (front == -1)
+        {
+            front = 0;
+        }
+
+        // Incrementar rear y guardar valor
+        rear++;
+        queue[rear] = valor;
+    }
+
+    static void Dequeue()
+    {
+        // Verificar si la cola está vacía
+        if (front == -1 || front > rear)
+        {
+            Console.WriteLine(msgEmpty);
+            return;
+        }
+
+        // Obtener y mostrar el elemento eliminado
+        int eliminado = queue[front];
+        Console.WriteLine(msgDequeue, eliminado);
+
+        // Actualizar índices
+        front++;
+        if (front > rear)
+        {
+            front = -1;
+            rear = -1;
+        }
+    }
+
+    static void Peek()
+    {
+        // Verificar si la cola está vacía
+        if (front == -1)
+        {
+            Console.WriteLine(msgEmpty);
+            return;
+        }
+
+        // Mostrar el elemento al frente
+        Console.WriteLine(msgPeek, queue[front]);
+    }
+
+    static void MostrarCola()
+    {
+        // Verificar si la cola está vacía
+        if (front == -1)
+        {
+            Console.WriteLine(msgEmpty);
+            return;
+        }
+
+        // Mostrar los elementos de la cola
+        Console.Write(msgQueue);
+        for (int i = front; i <= rear; i++)
+        {
+            Console.Write(queue[i] + " ");
+        }
+        Console.WriteLine(msgNewline);
+    }
+}
+*/
+
+.data
+    msg_menu: 
+        .string "\nOperaciones de Cola\n"
+        .string "1. Enqueue (Insertar)\n"
+        .string "2. Dequeue (Eliminar)\n"
+        .string "3. Peek (Ver frente)\n"
+        .string "4. Mostrar cola\n"
+        .string "5. Salir\n"
+        .string "Seleccione una opción: "
+    
+    msg_enq: .string "Ingrese valor a insertar: "
+    msg_deq: .string "Elemento eliminado: %d\n"
+    msg_peek: .string "Elemento al frente: %d\n"
+    msg_empty: .string "La cola está vacía\n"
+    msg_full: .string "La cola está llena\n"
+    msg_queue: .string "Contenido de la cola: "
+    msg_num: .string "%d "
+    msg_newline: .string "\n"
+    formato_int: .string "%d"
+    
+    // Cola y variables
+    queue: .skip 40       // Espacio para 10 elementos (4 bytes c/u)
+    queue_size: .word 10  // Tamaño máximo de la cola
+    front: .word -1       // Índice del frente
+    rear: .word -1        // Índice del final
+    opcion: .word 0
+    valor: .word 0
+
+.text
+.global main
+.align 2
+
+main:
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr x0, msg_menu
+    bl printf
+
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
+
+    // Verificar opción
+    adr x0, opcion
+    ldr w0, [x0]
+    
+    cmp w0, #5
+    b.eq fin_programa
+    
+    cmp w0, #1
+    b.eq enqueue
+    
+    cmp w0, #2
+    b.eq dequeue
+    
+    cmp w0, #3
+    b.eq peek_elemento
+    
+    cmp w0, #4
+    b.eq mostrar_cola
+    
+    b menu_loop
+
+enqueue:
+    // Verificar si la cola está llena
+    adr x20, rear
+    ldr w21, [x20]
+    adr x22, queue_size
+    ldr w22, [x22]
+    sub w22, w22, #1
+    
+    cmp w21, w22
+    b.ge cola_llena
+    
+    // Leer valor a insertar
+    adr x0, msg_enq
+    bl printf
+    adr x0, formato_int
+    adr x1, valor
+    bl scanf
+    
+    // Si es el primer elemento
+    adr x20, front
+    ldr w23, [x20]
+    cmp w23, #-1
+    b.ne continuar_enq
+    mov w23, #0
+    str w23, [x20]
+    
+continuar_enq:
+    // Incrementar rear y guardar valor
+    adr x20, rear
+    ldr w21, [x20]
+    add w21, w21, #1
+    str w21, [x20]
+    
+    adr x20, queue
+    adr x22, valor
+    ldr w22, [x22]
+    str w22, [x20, w21, SXTW #2]
+    
+    b menu_loop
+
+dequeue:
+    // Verificar si la cola está vacía
+    adr x20, front
+    ldr w21, [x20]
+    cmp w21, #-1
+    b.eq cola_vacia
+    
+    // Obtener elemento del frente
+    adr x20, queue
+    ldr w22, [x20, w21, SXTW #2]
+    
+    // Mostrar elemento eliminado
+    adr x0, msg_deq
+    mov w1, w22
+    bl printf
+    
+    // Actualizar índices
+    adr x20, front
+    adr x23, rear
+    ldr w24, [x23]
+    
+    cmp w21, w24
+    b.eq vaciar_cola
+    
+    add w21, w21, #1
+    str w21, [x20]
+    b menu_loop
+
+vaciar_cola:
+    mov w21, #-1
+    adr x20, front
+    str w21, [x20]
+    adr x20, rear
+    str w21, [x20]
+    b menu_loop
+
+peek_elemento:
+    // Verificar si la cola está vacía
+    adr x20, front
+    ldr w21, [x20]
+    cmp w21, #-1
+    b.eq cola_vacia
+    
+    // Mostrar elemento del frente
+    adr x20, queue
+    ldr w22, [x20, w21, SXTW #2]
+    adr x0, msg_peek
+    mov w1, w22
+    bl printf
+    
+    b menu_loop
+
+mostrar_cola:
+    // Verificar si la cola está vacía
+    adr x20, front
+    ldr w21, [x20]
+    cmp w21, #-1
+    b.eq cola_vacia
+    
+    // Mostrar mensaje
+    adr x0, msg_queue
+    bl printf
+    
+    // Mostrar elementos
+    adr x20, queue
+    adr x23, rear
+    ldr w23, [x23]
+
+mostrar_loop:
+    ldr w1, [x20, w21, SXTW #2]
+    adr x0, msg_num
+    bl printf
+    
+    add w21, w21, #1
+    cmp w21, w23
+    b.le mostrar_loop
+    
+    adr x0, msg_newline
+    bl printf
+    b menu_loop
+
+cola_vacia:
+    adr x0, msg_empty
+    bl printf
+    b menu_loop
+
+cola_llena:
+    adr x0, msg_full
+    bl printf
+    b menu_loop
+
+fin_programa:
+    mov w0, #0
+    ldp x29, x30, [sp], 16
+    ret
+```
+## Descripción
+
+Programa 38 de 50 Implementar una cola usando un arreglo.
+Video de Prueba
+https://asciinema.org/a/690872
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que Implementa una cola usando un arreglo.
+ 
+/*using System;
+
+class QueueProgram
+{
+    // Mensajes del menú y mensajes informativos
+    static readonly string msgMenu = "\nOperaciones de Cola\n" +
+                                     "1. Enqueue (Insertar)\n" +
+                                     "2. Dequeue (Eliminar)\n" +
+                                     "3. Peek (Ver frente)\n" +
+                                     "4. Mostrar cola\n" +
+                                     "5. Salir\n" +
+                                     "Seleccione una opción: ";
+    static readonly string msgEnqueue = "Ingrese valor a insertar: ";
+    static readonly string msgDequeue = "Elemento eliminado: {0}\n";
+    static readonly string msgPeek = "Elemento al frente: {0}\n";
+    static readonly string msgEmpty = "La cola está vacía\n";
+    static readonly string msgFull = "La cola está llena\n";
+    static readonly string msgQueue = "Contenido de la cola: ";
+    static readonly string msgNewline = "\n";
+
+    // Cola y variables
+    static int queueSize = 10;
+    static int[] queue = new int[queueSize];
+    static int front = -1;
+    static int rear = -1;
+
+    static void Main()
+    {
+        while (true)
+        {
+            // Mostrar menú
+            Console.Write(msgMenu);
+            int opcion = int.Parse(Console.ReadLine());
+
+            switch (opcion)
+            {
+                case 1:
+                    Enqueue();
+                    break;
+                case 2:
+                    Dequeue();
+                    break;
+                case 3:
+                    Peek();
+                    break;
+                case 4:
+                    MostrarCola();
+                    break;
+                case 5:
+                    Console.WriteLine("Saliendo del programa...");
+                    return;
+                default:
+                    Console.WriteLine("Opción inválida, intente nuevamente.");
+                    break;
+            }
+        }
+    }
+
+    static void Enqueue()
+    {
+        // Verificar si la cola está llena
+        if (rear == queueSize - 1)
+        {
+            Console.WriteLine(msgFull);
+            return;
+        }
+
+        // Leer valor a insertar
+        Console.Write(msgEnqueue);
+        int valor = int.Parse(Console.ReadLine());
+
+        // Si es el primer elemento
+        if (front == -1)
+        {
+            front = 0;
+        }
+
+        // Incrementar rear y guardar valor
+        rear++;
+        queue[rear] = valor;
+    }
+
+    static void Dequeue()
+    {
+        // Verificar si la cola está vacía
+        if (front == -1 || front > rear)
+        {
+            Console.WriteLine(msgEmpty);
+            return;
+        }
+
+        // Obtener y mostrar el elemento eliminado
+        int eliminado = queue[front];
+        Console.WriteLine(msgDequeue, eliminado);
+
+        // Actualizar índices
+        front++;
+        if (front > rear)
+        {
+            front = -1;
+            rear = -1;
+        }
+    }
+
+    static void Peek()
+    {
+        // Verificar si la cola está vacía
+        if (front == -1)
+        {
+            Console.WriteLine(msgEmpty);
+            return;
+        }
+
+        // Mostrar el elemento al frente
+        Console.WriteLine(msgPeek, queue[front]);
+    }
+
+    static void MostrarCola()
+    {
+        // Verificar si la cola está vacía
+        if (front == -1)
+        {
+            Console.WriteLine(msgEmpty);
+            return;
+        }
+
+        // Mostrar los elementos de la cola
+        Console.Write(msgQueue);
+        for (int i = front; i <= rear; i++)
+        {
+            Console.Write(queue[i] + " ");
+        }
+        Console.WriteLine(msgNewline);
+    }
+}
+*/
+
+.data
+    msg_menu: 
+        .string "\nOperaciones de Cola\n"
+        .string "1. Enqueue (Insertar)\n"
+        .string "2. Dequeue (Eliminar)\n"
+        .string "3. Peek (Ver frente)\n"
+        .string "4. Mostrar cola\n"
+        .string "5. Salir\n"
+        .string "Seleccione una opción: "
+    
+    msg_enq: .string "Ingrese valor a insertar: "
+    msg_deq: .string "Elemento eliminado: %d\n"
+    msg_peek: .string "Elemento al frente: %d\n"
+    msg_empty: .string "La cola está vacía\n"
+    msg_full: .string "La cola está llena\n"
+    msg_queue: .string "Contenido de la cola: "
+    msg_num: .string "%d "
+    msg_newline: .string "\n"
+    formato_int: .string "%d"
+    
+    // Cola y variables
+    queue: .skip 40       // Espacio para 10 elementos (4 bytes c/u)
+    queue_size: .word 10  // Tamaño máximo de la cola
+    front: .word -1       // Índice del frente
+    rear: .word -1        // Índice del final
+    opcion: .word 0
+    valor: .word 0
+
+.text
+.global main
+.align 2
+
+main:
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr x0, msg_menu
+    bl printf
+
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
+
+    // Verificar opción
+    adr x0, opcion
+    ldr w0, [x0]
+    
+    cmp w0, #5
+    b.eq fin_programa
+    
+    cmp w0, #1
+    b.eq enqueue
+    
+    cmp w0, #2
+    b.eq dequeue
+    
+    cmp w0, #3
+    b.eq peek_elemento
+    
+    cmp w0, #4
+    b.eq mostrar_cola
+    
+    b menu_loop
+
+enqueue:
+    // Verificar si la cola está llena
+    adr x20, rear
+    ldr w21, [x20]
+    adr x22, queue_size
+    ldr w22, [x22]
+    sub w22, w22, #1
+    
+    cmp w21, w22
+    b.ge cola_llena
+    
+    // Leer valor a insertar
+    adr x0, msg_enq
+    bl printf
+    adr x0, formato_int
+    adr x1, valor
+    bl scanf
+    
+    // Si es el primer elemento
+    adr x20, front
+    ldr w23, [x20]
+    cmp w23, #-1
+    b.ne continuar_enq
+    mov w23, #0
+    str w23, [x20]
+    
+continuar_enq:
+    // Incrementar rear y guardar valor
+    adr x20, rear
+    ldr w21, [x20]
+    add w21, w21, #1
+    str w21, [x20]
+    
+    adr x20, queue
+    adr x22, valor
+    ldr w22, [x22]
+    str w22, [x20, w21, SXTW #2]
+    
+    b menu_loop
+
+dequeue:
+    // Verificar si la cola está vacía
+    adr x20, front
+    ldr w21, [x20]
+    cmp w21, #-1
+    b.eq cola_vacia
+    
+    // Obtener elemento del frente
+    adr x20, queue
+    ldr w22, [x20, w21, SXTW #2]
+    
+    // Mostrar elemento eliminado
+    adr x0, msg_deq
+    mov w1, w22
+    bl printf
+    
+    // Actualizar índices
+    adr x20, front
+    adr x23, rear
+    ldr w24, [x23]
+    
+    cmp w21, w24
+    b.eq vaciar_cola
+    
+    add w21, w21, #1
+    str w21, [x20]
+    b menu_loop
+
+vaciar_cola:
+    mov w21, #-1
+    adr x20, front
+    str w21, [x20]
+    adr x20, rear
+    str w21, [x20]
+    b menu_loop
+
+peek_elemento:
+    // Verificar si la cola está vacía
+    adr x20, front
+    ldr w21, [x20]
+    cmp w21, #-1
+    b.eq cola_vacia
+    
+    // Mostrar elemento del frente
+    adr x20, queue
+    ldr w22, [x20, w21, SXTW #2]
+    adr x0, msg_peek
+    mov w1, w22
+    bl printf
+    
+    b menu_loop
+
+mostrar_cola:
+    // Verificar si la cola está vacía
+    adr x20, front
+    ldr w21, [x20]
+    cmp w21, #-1
+    b.eq cola_vacia
+    
+    // Mostrar mensaje
+    adr x0, msg_queue
+    bl printf
+    
+    // Mostrar elementos
+    adr x20, queue
+    adr x23, rear
+    ldr w23, [x23]
+
+mostrar_loop:
+    ldr w1, [x20, w21, SXTW #2]
+    adr x0, msg_num
+    bl printf
+    
+    add w21, w21, #1
+    cmp w21, w23
+    b.le mostrar_loop
+    
+    adr x0, msg_newline
+    bl printf
+    b menu_loop
+
+cola_vacia:
+    adr x0, msg_empty
+    bl printf
+    b menu_loop
+
+cola_llena:
+    adr x0, msg_full
+    bl printf
+    b menu_loop
+
+fin_programa:
+    mov w0, #0
+    ldp x29, x30, [sp], 16
+    ret
+```
+## Descripción
+
+Programa 39 de 50 Convertir decimal a binario.
+Video de Prueba
+https://asciinema.org/a/690879
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que Convierte decimal a binario.
+
+/*using System;
+
+class DecimalToBinaryConverter
+{
+    static readonly string msgMenu = "\nConversor Decimal a Binario\n" +
+                                     "1. Convertir número\n" +
+                                     "2. Salir\n" +
+                                     "Seleccione una opción: ";
+    static readonly string msgInput = "Ingrese un número decimal (positivo): ";
+    static readonly string msgResult = "El número {0} en binario es: ";
+    static readonly string msgNegative = "Por favor ingrese un número positivo\n";
+
+    static void Main()
+    {
+        while (true)
+        {
+            // Mostrar menú
+            Console.Write(msgMenu);
+            int opcion = int.Parse(Console.ReadLine());
+
+            if (opcion == 2)
+            {
+                Console.WriteLine("Saliendo del programa...");
+                break;
+            }
+            else if (opcion == 1)
+            {
+                ConvertirNumero();
+            }
+            else
+            {
+                Console.WriteLine("Opción inválida, intente nuevamente.");
+            }
+        }
+    }
+
+    static void ConvertirNumero()
+    {
+        // Solicitar número
+        Console.Write(msgInput);
+        int numero;
+        if (!int.TryParse(Console.ReadLine(), out numero) || numero < 0)
+        {
+            Console.WriteLine(msgNegative);
+            return;
+        }
+
+        // Manejar el caso especial para el número 0
+        if (numero == 0)
+        {
+            Console.WriteLine(msgResult, numero, "0");
+            return;
+        }
+
+        // Convertir a binario
+        string binario = ConvertirADecimal(numero);
+        Console.WriteLine(msgResult, numero, binario);
+    }
+
+    static string ConvertirADecimal(int numero)
+    {
+        char[] bits = new char[32];  // Arreglo para almacenar hasta 32 bits
+        int indice = 0;
+
+        // Llenar el arreglo de bits en orden inverso
+        while (numero > 0)
+        {
+            bits[indice++] = (char)((numero % 2) + '0');
+            numero /= 2;
+        }
+
+        // Invertir el orden de los bits para la salida correcta
+        Array.Reverse(bits, 0, indice);
+        return new string(bits, 0, indice);
+    }
+}
+*/
+
+.data
+    msg_menu: 
+        .string "\nConversor Decimal a Binario\n"
+        .string "1. Convertir número\n"
+        .string "2. Salir\n"
+        .string "Seleccione una opción: "
+    
+    msg_input: .string "Ingrese un número decimal (positivo): "
+    msg_result: .string "El número %d en binario es: "
+    msg_negative: .string "Por favor ingrese un número positivo\n"
+    msg_bit: .string "%d"
+    msg_newline: .string "\n"
+    formato_int: .string "%d"
+    
+    // Variables
+    opcion: .word 0
+    numero: .word 0
+    binary: .skip 32     // Arreglo para almacenar bits (32 bits máximo)
+    binary_size: .word 0
+
+.text
+.global main
+.align 2
+
+main:
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr x0, msg_menu
+    bl printf
+
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
+
+    // Verificar opción
+    adr x0, opcion
+    ldr w0, [x0]
+    
+    cmp w0, #2
+    b.eq fin_programa
+    
+    cmp w0, #1
+    b.eq convertir_numero
+    
+    b menu_loop
+
+convertir_numero:
+    // Solicitar número
+    adr x0, msg_input
+    bl printf
+    
+    // Leer número
+    adr x0, formato_int
+    adr x1, numero
+    bl scanf
+    
+    // Verificar si es positivo
+    adr x0, numero
+    ldr w0, [x0]
+    cmp w0, #0
+    b.lt numero_negativo
+    
+    // Preparar para conversión
+    mov w19, w0          // Guardar número original
+    adr x20, binary      // Dirección del arreglo de bits
+    mov w21, #0          // Contador de bits
+    
+    // Si el número es 0, manejo especial
+    cmp w19, #0
+    b.eq caso_cero
+
+conversion_loop:
+    // Verificar si el número es 0
+    cmp w19, #0
+    b.eq mostrar_resultado
+    
+    // Obtener bit actual (número & 1)
+    and w22, w19, #1
+    
+    // Guardar bit en el arreglo
+    str w22, [x20, w21, SXTW #2]
+    
+    // Incrementar contador
+    add w21, w21, #1
+    
+    // Dividir número por 2 (shift right)
+    lsr w19, w19, #1
+    
+    b conversion_loop
+
+caso_cero:
+    mov w22, #0
+    str w22, [x20]
+    mov w21, #1
+    b mostrar_resultado
+
+mostrar_resultado:
+    // Guardar tamaño del binario
+    adr x22, binary_size
+    str w21, [x22]
+    
+    // Mostrar mensaje inicial
+    adr x0, msg_result
+    adr x1, numero
+    ldr w1, [x1]
+    bl printf
+    
+    // Mostrar bits en orden inverso
+    sub w21, w21, #1     // Índice del último bit
+    
+mostrar_bits:
+    ldr w1, [x20, w21, SXTW #2]
+    adr x0, msg_bit
+    bl printf
+    
+    sub w21, w21, #1
+    cmp w21, #-1
+    b.ge mostrar_bits
+    
+    // Nueva línea
+    adr x0, msg_newline
+    bl printf
+    
+    b menu_loop
+
+numero_negativo:
+    adr x0, msg_negative
+    bl printf
+    b menu_loop
+
+fin_programa:
+    mov w0, #0
+    ldp x29, x30, [sp], 16
+    ret
+```
+## Descripción
+
+Programa 40 de 50 Convertir binario a decimal.
+Video de Prueba
+https://asciinema.org/a/690884
+
+## Código Completo
+```c
+
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que Convierte binario a decimal.
+
+// Equivalente en C#:
+/*
+using System;
+
+class BinaryToDecimalConverter
+{
+    static void Main()
+    {
+        while (true)
+        {
+            Console.WriteLine("\nConversor Binario a Decimal");
+            Console.WriteLine("1. Convertir número Binario a Decimal");
+            Console.WriteLine("2. Salir");
+            Console.Write("Seleccione una opción: ");
+
+            int opcion = Convert.ToInt32(Console.ReadLine());
+
+            switch (opcion)
+            {
+                case 2:
+                    return;
+                case 1:
+                    ConvertirBinarioDecimal();
+                    break;
+            }
+        }
+    }
+
+    static void ConvertirBinarioDecimal()
+    {
+        Console.Write("Ingrese un número binario (solo 0s y 1s): ");
+        string binario = Console.ReadLine();
+
+        try 
+        {
+            int decimal = Convert.ToInt32(binario, 2);
+            Console.WriteLine($"El número en decimal es: {decimal}");
+        }
+        catch (FormatException)
+        {
+            Console.WriteLine("Número binario inválido. Solo se permiten 0s y 1s.");
+        }
+    }
+}
+*/
+.data
+    msg_menu: 
+        .string "\nConversor Binario a Decimal\n"
+        .string "1. Convertir número Binario a Decimal\n"
+        .string "2. Salir\n"
+        .string "Seleccione una opción: "
+    
+    msg_input_binary: .string "Ingrese un número binario (solo 0s y 1s): "
+    msg_result_decimal: .string "El número en decimal es: %d\n"
+    msg_error_invalido: .string "Número binario inválido. Solo se permiten 0s y 1s.\n"
+    
+    formato_int: .string "%d"
+    formato_string: .string "%s"
+    
+    // Variables
+    opcion: .word 0
+    numero_binario: .skip 33   // Arreglo para almacenar número binario (32 bits + terminador)
+    potencia: .word 1          // Variable para calcular potencias de 2
+.text
+.global main
+.align 2
+
+main:
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr x0, msg_menu
+    bl printf
+    
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
+    
+    // Verificar opción
+    adr x0, opcion
+    ldr w0, [x0]
+    
+    cmp w0, #2
+    b.eq fin_programa
+    
+    cmp w0, #1
+    b.eq convertir_binario_decimal
+    
+    b menu_loop
+
+convertir_binario_decimal:
+    // Solicitar número binario
+    adr x0, msg_input_binary
+    bl printf
+    
+    // Limpiar buffer de número binario
+    adr x0, numero_binario
+    mov w1, #0
+    mov w2, #33
+    bl memset
+    
+    // Leer número binario como string
+    adr x0, formato_string
+    adr x1, numero_binario
+    bl scanf
+    
+    // Preparar registros para conversión
+    mov w19, #0         // Resultado decimal (acumulador)
+    mov w20, #0         // Índice de cadena
+    adr x21, numero_binario  // Dirección del número binario
+    
+    // Reiniciar potencia
+    adr x22, potencia
+    mov w23, #1
+    str w23, [x22]
+    
+conversion_loop:
+    // Obtener carácter en la posición actual (usando SXTW para extensión de signo)
+    ldrb w22, [x21, w20, SXTW]
+    
+    // Verificar fin de cadena
+    cbz w22, mostrar_resultado
+    
+    // Verificar si es 0 o 1
+    cmp w22, #'0'
+    b.lo error_conversion
+    cmp w22, #'1'
+    b.hi error_conversion
+    
+    // Si es '1', sumar al resultado
+    cmp w22, #'1'
+    b.ne bit_saltar
+    
+    // Obtener valor de potencia actual
+    adr x22, potencia
+    ldr w23, [x22]
+    add w19, w19, w23
+
+bit_saltar:
+    // Multiplicar potencia por 2 para siguiente posición
+    adr x22, potencia
+    ldr w23, [x22]
+    lsl w23, w23, #1
+    str w23, [x22]
+    
+    // Incrementar índice de cadena
+    add w20, w20, #1
+    b conversion_loop
+    
+mostrar_resultado:
+    // Mostrar resultado decimal
+    adr x0, msg_result_decimal
+    mov w1, w19
+    bl printf
+    
+    b menu_loop
+
+error_conversion:
+    // Mostrar mensaje de error por número inválido
+    adr x0, msg_error_invalido
+    bl printf
+    
+    b menu_loop
+
+fin_programa:
+    // Salir del programa
+    ldp x29, x30, [sp], 16
+    ret
+```
