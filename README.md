@@ -6953,3 +6953,1700 @@ fin_programa:
     ldp x29, x30, [sp], 16
     ret
 ```
+## Descripción
+
+Programa 41 de 50 Conversión de decimal a hexadecimal.
+Video de Prueba
+https://asciinema.org/a/691006
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que Convierte decimal a Hexadecimal.
+// Equivalente en C#:
+
+/*using System;
+
+class DecimalAHexadecimal
+{
+    static void Main()
+    {
+        // Solicitar número decimal
+        Console.Write("Ingrese un número decimal: ");
+        if (int.TryParse(Console.ReadLine(), out int numero))
+        {
+            // Convertir y mostrar el resultado en hexadecimal
+            Console.WriteLine("El número en hexadecimal es: {0:X}", numero);
+        }
+        else
+        {
+            Console.WriteLine("Entrada inválida, por favor ingrese un número entero.");
+        }
+    }
+}
+*/
+
+.data
+msg_input: .string "Ingrese un número decimal: "
+msg_output: .string "El número en hexadecimal es: %X\n"
+formato_int: .string "%d"
+numero: .word 0
+
+.text
+.global main
+.align 2
+
+main:
+    // Prólogo
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+    
+    // Solicitar número decimal
+    adr x0, msg_input
+    bl printf
+    
+    // Leer número decimal
+    adr x0, formato_int
+    adr x1, numero
+    bl scanf
+    
+    // Cargar número en w19
+    adr x0, numero
+    ldr w19, [x0]
+    
+    // Mostrar resultado en hexadecimal
+    adr x0, msg_output
+    mov w1, w19
+    bl printf
+    
+    // Epílogo
+    mov w0, #0
+    ldp x29, x30, [sp], 16
+    ret
+
+```
+## Descripción
+
+Programa 42 de 50 	Conversión de hexadecimal a decimal.
+Video de Prueba
+https://asciinema.org/a/691007
+
+## Código Completo
+```c
+
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que Convierte Hexadecimal a Decimal.
+// Equivalente en C#:
+
+
+/*using System;
+
+class HexadecimalADecimal
+{
+    static void Main()
+    {
+        // Solicitar número hexadecimal
+        Console.Write("Ingrese un número hexadecimal (sin 0x): ");
+        string input = Console.ReadLine();
+        
+        try
+        {
+            // Intentar convertir el número hexadecimal a decimal
+            int decimalValue = Convert.ToInt32(input, 16);
+            
+            // Mostrar el resultado
+            Console.WriteLine("El número en decimal es: {0}", decimalValue);
+        }
+        catch (FormatException)
+        {
+            // Manejo de error para caracteres hexadecimales inválidos
+            Console.WriteLine("Error: Carácter hexadecimal inválido");
+        }
+        catch (OverflowException)
+        {
+            // Manejo de error si el valor es demasiado grande
+            Console.WriteLine("Error: El número es demasiado grande para un entero de 32 bits");
+        }
+    }
+}
+*/
+
+
+.data
+msg_input: .string "Ingrese un número hexadecimal (sin 0x): "
+msg_output: .string "El número en decimal es: %d\n"
+msg_error: .string "Error: Carácter hexadecimal inválido\n"
+formato_str: .string "%s"
+buffer: .space 33       // 32 caracteres + null terminator
+numero: .word 0
+
+.text
+.global main
+.align 2
+
+main:
+    // Prólogo
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+    
+    // Solicitar número hexadecimal
+    adr x0, msg_input
+    bl printf
+    
+    // Leer string hexadecimal
+    adr x0, formato_str
+    adr x1, buffer
+    bl scanf
+    
+    // Inicializar registros
+    mov w19, #0          // Resultado decimal
+    mov w20, #1          // Base (16^0)
+    adr x21, buffer      // Puntero al string
+    
+    // Obtener longitud del string
+    mov x22, x21        // Copiar dirección inicial
+longitud_loop:
+    ldrb w23, [x22]     // Cargar byte actual
+    cbz w23, comenzar_conversion  // Si es null, terminar
+    add x22, x22, #1    // Siguiente carácter
+    b longitud_loop
+
+comenzar_conversion:
+    sub x22, x22, #1    // Retroceder al último dígito
+
+conversion_loop:
+    cmp x22, x21        // ¿Llegamos al inicio?
+    b.lt fin_conversion
+    
+    // Cargar dígito actual
+    ldrb w23, [x22]
+    
+    // Convertir a valor numérico
+    cmp w23, #'0'
+    b.lt error_input
+    cmp w23, #'9'
+    b.le digito_numerico
+    
+    // Convertir letras mayúsculas
+    cmp w23, #'A'
+    b.lt error_input
+    cmp w23, #'F'
+    b.le letra_mayuscula
+    
+    // Convertir letras minúsculas
+    cmp w23, #'a'
+    b.lt error_input
+    cmp w23, #'f'
+    b.gt error_input
+    
+    // Convertir a-f
+    sub w23, w23, #'a'
+    add w23, w23, #10
+    b procesar_digito
+
+letra_mayuscula:
+    // Convertir A-F
+    sub w23, w23, #'A'
+    add w23, w23, #10
+    b procesar_digito
+
+digito_numerico:
+    // Convertir 0-9
+    sub w23, w23, #'0'
+
+procesar_digito:
+    // Multiplicar por la potencia actual y sumar
+    mul w24, w23, w20
+    add w19, w19, w24
+    
+    // Siguiente potencia de 16
+    mov w25, #16
+    mul w20, w20, w25
+    
+    sub x22, x22, #1    // Retroceder un dígito
+    b conversion_loop
+
+error_input:
+    adr x0, msg_error
+    bl printf
+    b fin_programa
+
+fin_conversion:
+    // Mostrar resultado
+    adr x0, msg_output
+    mov w1, w19
+    bl printf
+    
+fin_programa:
+    // Epílogo
+    mov w0, #0
+    ldp x29, x30, [sp], 16
+    ret
+
+```
+## Descripción
+
+Programa 43 de 50 	Calculadora simple (Suma, Resta, Multiplicación, División).
+Video de Prueba
+https://asciinema.org/a/691008
+
+## Código Completo
+```c
+
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que realiza una calculadora básica.
+// Equivalente en C#:
+
+/*using System;
+
+class CalculadoraSimple
+{
+    static void Main()
+    {
+        bool continuar = true;
+
+        while (continuar)
+        {
+            // Mostrar menú
+            Console.WriteLine("\n=== CALCULADORA SIMPLE ===");
+            Console.WriteLine("1. Suma");
+            Console.WriteLine("2. Resta");
+            Console.WriteLine("3. Multiplicación");
+            Console.WriteLine("4. División");
+            Console.WriteLine("5. Salir");
+            Console.Write("Seleccione una opción: ");
+
+            // Leer opción
+            if (!int.TryParse(Console.ReadLine(), out int opcion))
+            {
+                Console.WriteLine("Error: Opción inválida\n");
+                continue;
+            }
+
+            // Verificar opción de salida
+            if (opcion == 5)
+            {
+                Console.WriteLine("¡Gracias por usar la calculadora!");
+                break;
+            }
+
+            // Validar opción (1-4)
+            if (opcion < 1 || opcion > 4)
+            {
+                Console.WriteLine("Error: Opción inválida\n");
+                continue;
+            }
+
+            // Solicitar números
+            Console.Write("Ingrese el primer número: ");
+            if (!int.TryParse(Console.ReadLine(), out int num1))
+            {
+                Console.WriteLine("Error: Entrada inválida para el primer número\n");
+                continue;
+            }
+
+            Console.Write("Ingrese el segundo número: ");
+            if (!int.TryParse(Console.ReadLine(), out int num2))
+            {
+                Console.WriteLine("Error: Entrada inválida para el segundo número\n");
+                continue;
+            }
+
+            // Realizar la operación correspondiente
+            switch (opcion)
+            {
+                case 1: // Suma
+                    Console.WriteLine("Resultado: {0}\n", num1 + num2);
+                    break;
+                case 2: // Resta
+                    Console.WriteLine("Resultado: {0}\n", num1 - num2);
+                    break;
+                case 3: // Multiplicación
+                    Console.WriteLine("Resultado: {0}\n", num1 * num2);
+                    break;
+                case 4: // División
+                    if (num2 == 0)
+                    {
+                        Console.WriteLine("Error: No se puede dividir por cero\n");
+                    }
+                    else
+                    {
+                        int cociente = num1 / num2;
+                        int residuo = num1 % num2;
+                        Console.WriteLine("Resultado: {0} (Cociente: {1}, Residuo: {2})\n", cociente, cociente, residuo);
+                    }
+                    break;
+            }
+        }
+    }
+}
+*/
+
+
+.data
+menu:      .string "\n=== CALCULADORA SIMPLE ===\n"
+           .string "1. Suma\n"
+           .string "2. Resta\n"
+           .string "3. Multiplicación\n"
+           .string "4. División\n"
+           .string "5. Salir\n"
+           .string "Seleccione una opción: "
+
+msg_num1:  .string "Ingrese el primer número: "
+msg_num2:  .string "Ingrese el segundo número: "
+msg_resultado: .string "Resultado: %d\n"
+msg_div_resultado: .string "Resultado: %d (Cociente: %d, Residuo: %d)\n"
+msg_error_div: .string "Error: No se puede dividir por cero\n"
+msg_error_op: .string "Error: Opción inválida\n"
+msg_despedida: .string "¡Gracias por usar la calculadora!\n"
+formato_int: .string "%d"
+num1: .word 0
+num2: .word 0
+opcion: .word 0
+
+.text
+.global main
+.align 2
+
+main:
+    // Prólogo
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr x0, menu
+    bl printf
+    
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
+    
+    // Cargar opción en w19
+    adr x0, opcion
+    ldr w19, [x0]
+    
+    // Verificar si es salir (opción 5)
+    cmp w19, #5
+    b.eq salir
+    
+    // Verificar opción válida (1-4)
+    cmp w19, #1
+    b.lt opcion_invalida
+    cmp w19, #4
+    b.gt opcion_invalida
+    
+    // Solicitar números
+    adr x0, msg_num1
+    bl printf
+    adr x0, formato_int
+    adr x1, num1
+    bl scanf
+    
+    adr x0, msg_num2
+    bl printf
+    adr x0, formato_int
+    adr x1, num2
+    bl scanf
+    
+    // Cargar números en registros
+    adr x0, num1
+    ldr w20, [x0]    // Primer número en w20
+    adr x0, num2
+    ldr w21, [x0]    // Segundo número en w21
+    
+    // Saltar a la operación correspondiente
+    cmp w19, #1
+    b.eq suma
+    cmp w19, #2
+    b.eq resta
+    cmp w19, #3
+    b.eq multiplicacion
+    b division
+
+suma:
+    add w22, w20, w21
+    b mostrar_resultado
+
+resta:
+    sub w22, w20, w21
+    b mostrar_resultado
+
+multiplicacion:
+    mul w22, w20, w21
+    b mostrar_resultado
+
+division:
+    // Verificar división por cero
+    cmp w21, #0
+    b.eq error_division
+    
+    // Realizar división
+    sdiv w22, w20, w21    // Cociente
+    msub w23, w22, w21, w20  // Residuo
+    
+    // Mostrar resultado con cociente y residuo
+    adr x0, msg_div_resultado
+    mov w1, w22           // Resultado
+    mov w2, w22           // Cociente
+    mov w3, w23           // Residuo
+    bl printf
+    b menu_loop
+
+mostrar_resultado:
+    adr x0, msg_resultado
+    mov w1, w22
+    bl printf
+    b menu_loop
+
+error_division:
+    adr x0, msg_error_div
+    bl printf
+    b menu_loop
+
+opcion_invalida:
+    adr x0, msg_error_op
+    bl printf
+    b menu_loop
+
+salir:
+    adr x0, msg_despedida
+    bl printf
+
+    // Epílogo
+    mov w0, #0
+    ldp x29, x30, [sp], 16
+    ret
+
+
+```
+## Descripción
+
+Programa 44 de 50 	Generación de números aleatorios (con semilla).
+Video de Prueba
+https://asciinema.org/a/691009
+
+## Código Completo
+```c
+
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa genera números aleatorios (con semilla).
+// Equivalente en C#:
+
+/*using System;
+
+class GeneradorAleatorio
+{
+    private static int semilla = 12345;         // Semilla por defecto
+    private const int multiplicador = 1103515245;
+    private const int incremento = 12345;
+    private const int modulo = 2147483647;      // 2^31 - 1
+    
+    static void Main()
+    {
+        bool continuar = true;
+        
+        while (continuar)
+        {
+            // Mostrar menú
+            Console.WriteLine("\n=== GENERADOR DE NÚMEROS ALEATORIOS ===");
+            Console.WriteLine("1. Establecer semilla");
+            Console.WriteLine("2. Generar número aleatorio");
+            Console.WriteLine("3. Generar serie de números");
+            Console.WriteLine("4. Salir");
+            Console.Write("Seleccione una opción: ");
+            
+            // Leer opción
+            if (!int.TryParse(Console.ReadLine(), out int opcion))
+            {
+                Console.WriteLine("Error: Ingrese un valor válido\n");
+                continue;
+            }
+            
+            switch (opcion)
+            {
+                case 1:
+                    EstablecerSemilla();
+                    break;
+                
+                case 2:
+                    GenerarUno();
+                    break;
+                
+                case 3:
+                    GenerarSerie();
+                    break;
+                
+                case 4:
+                    Console.WriteLine("¡Gracias por usar el generador!");
+                    continuar = false;
+                    break;
+                
+                default:
+                    Console.WriteLine("Error: Opción inválida\n");
+                    break;
+            }
+        }
+    }
+
+    static void EstablecerSemilla()
+    {
+        Console.Write("Ingrese la semilla (número entero positivo): ");
+        if (int.TryParse(Console.ReadLine(), out int nuevaSemilla) && nuevaSemilla > 0)
+        {
+            semilla = nuevaSemilla;
+        }
+        else
+        {
+            Console.WriteLine("Error: Ingrese un valor válido\n");
+        }
+    }
+
+    static void GenerarUno()
+    {
+        int numeroAleatorio = GenerarAleatorio();
+        Console.WriteLine($"Número aleatorio generado: {numeroAleatorio}");
+    }
+
+    static void GenerarSerie()
+    {
+        Console.Write("¿Cuántos números desea generar?: ");
+        if (!int.TryParse(Console.ReadLine(), out int cantidad) || cantidad <= 0)
+        {
+            Console.WriteLine("Error: Ingrese un valor válido\n");
+            return;
+        }
+
+        for (int i = 0; i < cantidad; i++)
+        {
+            int numeroAleatorio = GenerarAleatorio();
+            Console.WriteLine($"Número aleatorio generado: {numeroAleatorio}");
+        }
+    }
+
+    static int GenerarAleatorio()
+    {
+        // siguiente = (multiplicador * semilla + incremento) % modulo
+        long producto = (long)multiplicador * semilla;
+        semilla = (int)((producto + incremento) % modulo);
+        return semilla;
+    }
+}
+*/
+
+
+.data
+msg_menu: .string "\n=== GENERADOR DE NÚMEROS ALEATORIOS ===\n"
+          .string "1. Establecer semilla\n"
+          .string "2. Generar número aleatorio\n"
+          .string "3. Generar serie de números\n"
+          .string "4. Salir\n"
+          .string "Seleccione una opción: "
+
+msg_semilla: .string "Ingrese la semilla (número entero positivo): "
+msg_cantidad: .string "¿Cuántos números desea generar?: "
+msg_rango: .string "Rango del número aleatorio: 0 a %d\n"
+msg_numero: .string "Número aleatorio generado: %d\n"
+msg_error: .string "Error: Ingrese un valor válido\n"
+msg_despedida: .string "¡Gracias por usar el generador!\n"
+
+formato_int: .string "%d"
+nueva_linea: .string "\n"
+
+// Variables para el generador
+semilla: .word 12345    // Semilla por defecto
+multiplicador: .word 1103515245  // Valores del generador congruencial
+incremento: .word 12345
+modulo: .word 2147483647  // 2^31 - 1
+
+// Variables de uso general
+opcion: .word 0
+cantidad: .word 0
+temp: .word 0
+
+.text
+.global main
+.align 2
+
+main:
+    // Prólogo
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+
+menu_loop:
+    // Mostrar menú
+    adr x0, msg_menu
+    bl printf
+    
+    // Leer opción
+    adr x0, formato_int
+    adr x1, opcion
+    bl scanf
+    
+    // Cargar opción
+    adr x0, opcion
+    ldr w19, [x0]
+    
+    // Procesar opción
+    cmp w19, #1
+    b.eq establecer_semilla
+    cmp w19, #2
+    b.eq generar_uno
+    cmp w19, #3
+    b.eq generar_serie
+    cmp w19, #4
+    b.eq salir
+    
+    // Opción inválida
+    adr x0, msg_error
+    bl printf
+    b menu_loop
+
+establecer_semilla:
+    // Solicitar nueva semilla
+    adr x0, msg_semilla
+    bl printf
+    
+    adr x0, formato_int
+    adr x1, semilla
+    bl scanf
+    
+    b menu_loop
+
+generar_uno:
+    // Generar un solo número
+    bl generar_aleatorio
+    
+    // Mostrar número generado
+    adr x0, msg_numero
+    mov w1, w0
+    bl printf
+    
+    b menu_loop
+
+generar_serie:
+    // Solicitar cantidad
+    adr x0, msg_cantidad
+    bl printf
+    
+    adr x0, formato_int
+    adr x1, cantidad
+    bl scanf
+    
+    // Cargar cantidad en w20
+    adr x0, cantidad
+    ldr w20, [x0]
+    
+    // Verificar cantidad válida
+    cmp w20, #0
+    b.le menu_loop
+    
+generar_loop:
+    // Guardar registros
+    stp x20, x30, [sp, -16]!
+    
+    // Generar número
+    bl generar_aleatorio
+    
+    // Mostrar número
+    adr x0, msg_numero
+    mov w1, w0
+    bl printf
+    
+    // Restaurar registros
+    ldp x20, x30, [sp], 16
+    
+    // Decrementar contador y continuar si no es cero
+    subs w20, w20, #1
+    b.ne generar_loop
+    
+    b menu_loop
+
+generar_aleatorio:
+    // Implementación del generador congruencial lineal
+    // siguiente = (multiplicador * semilla + incremento) % modulo
+    
+    // Cargar valores
+    adr x0, semilla
+    ldr w1, [x0]
+    adr x0, multiplicador
+    ldr w2, [x0]
+    adr x0, incremento
+    ldr w3, [x0]
+    adr x0, modulo
+    ldr w4, [x0]
+    
+    // Realizar cálculos
+    mul w5, w1, w2      // multiplicador * semilla
+    add w5, w5, w3      // + incremento
+    udiv w6, w5, w4     // división para el módulo
+    msub w5, w6, w4, w5 // obtener el residuo
+    
+    // Guardar nueva semilla
+    adr x0, semilla
+    str w5, [x0]
+    
+    // Retornar valor generado en w0
+    mov w0, w5
+    ret
+
+salir:
+    adr x0, msg_despedida
+    bl printf
+    
+    // Epílogo
+    mov w0, #0
+    ldp x29, x30, [sp], 16
+    ret
+
+```
+## Descripción
+
+Programa 45 de 50 	Verificar si un número es Armstrong.
+Video de Prueba
+https://asciinema.org/a/691028
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que Verificar si un número es Armstrong.
+// Equivalente en C#:
+
+/*using System;
+
+class NumeroArmstrong
+{
+    static void Main()
+    {
+        // Mostrar explicación
+        Console.WriteLine("Un número Armstrong es igual a la suma de sus dígitos");
+        Console.WriteLine("elevados a la potencia de la cantidad de dígitos.");
+        Console.WriteLine("Ejemplo: 153 = 1^3 + 5^3 + 3^3 = 1 + 125 + 27\n");
+
+        // Solicitar número al usuario
+        Console.Write("Ingrese un número para verificar si es Armstrong: ");
+        if (!int.TryParse(Console.ReadLine(), out int numero) || numero < 0)
+        {
+            Console.WriteLine("Error: Debe ingresar un número entero positivo.");
+            return;
+        }
+
+        // Contar los dígitos del número
+        int cantidadDigitos = ContarDigitos(numero);
+        
+        // Mostrar desglose de cada dígito elevado a la potencia de cantidad de dígitos
+        Console.WriteLine($"\nDesglose de {numero}:");
+        int sumaTotal = CalcularSumaDePotencias(numero, cantidadDigitos);
+
+        // Mostrar la suma total y verificar si es un número Armstrong
+        Console.WriteLine($"Suma total = {sumaTotal}\n");
+        if (sumaTotal == numero)
+        {
+            Console.WriteLine($"¡{numero} ES un número Armstrong!");
+        }
+        else
+        {
+            Console.WriteLine($"{numero} NO es un número Armstrong.");
+        }
+    }
+
+    // Función para contar la cantidad de dígitos
+    static int ContarDigitos(int num)
+    {
+        int contador = 0;
+        while (num > 0)
+        {
+            num /= 10;
+            contador++;
+        }
+        return contador;
+    }
+
+    // Función para calcular la suma de los dígitos elevados a la cantidad de dígitos
+    static int CalcularSumaDePotencias(int num, int exponente)
+    {
+        int suma = 0;
+        int temp = num;
+
+        while (temp > 0)
+        {
+            int digito = temp % 10;
+            int potencia = CalcularPotencia(digito, exponente);
+            Console.WriteLine($"Dígito {digito} elevado a {exponente} = {potencia}");
+            suma += potencia;
+            temp /= 10;
+        }
+        return suma;
+    }
+
+    // Función para calcular potencia
+    static int CalcularPotencia(int baseNum, int exponente)
+    {
+        int resultado = 1;
+        for (int i = 0; i < exponente; i++)
+        {
+            resultado *= baseNum;
+        }
+        return resultado;
+    }
+}
+*/
+
+
+.data
+msg_input: .string "Ingrese un número para verificar si es Armstrong: "
+msg_es_armstrong: .string "¡%d ES un número Armstrong!\n"
+msg_no_armstrong: .string "%d NO es un número Armstrong.\n"
+msg_explicacion: .string "Un número Armstrong es igual a la suma de sus dígitos\n"
+                .string "elevados a la potencia de la cantidad de dígitos.\n"
+                .string "Ejemplo: 153 = 1^3 + 5^3 + 3^3 = 1 + 125 + 27\n\n"
+msg_desglose: .string "Desglose de %d:\n"
+msg_digito: .string "Dígito %d elevado a %d = %d\n"
+msg_suma: .string "Suma total = %d\n\n"
+formato_int: .string "%d"
+numero: .word 0
+
+.text
+.global main
+.align 2
+
+main:
+    // Prólogo
+    stp x29, x30, [sp, -48]!
+    mov x29, sp
+    
+    // Mostrar explicación
+    adr x0, msg_explicacion
+    bl printf
+    
+    // Solicitar número
+    adr x0, msg_input
+    bl printf
+    
+    adr x0, formato_int
+    adr x1, numero
+    bl scanf
+    
+    // Cargar número en w19
+    adr x0, numero
+    ldr w19, [x0]
+    mov w20, w19    // Copia para contar dígitos
+    
+    // Contar dígitos
+    mov w21, #0     // Contador de dígitos
+    mov w22, #10    // Divisor
+contar_digitos:
+    udiv w23, w20, w22    // Dividir por 10
+    add w21, w21, #1      // Incrementar contador
+    mov w20, w23          // Actualizar número
+    cbnz w20, contar_digitos
+    
+    // Mostrar desglose
+    adr x0, msg_desglose
+    mov w1, w19
+    bl printf
+    
+    // Calcular suma de potencias
+    mov w20, w19    // Restaurar número original
+    mov w22, #0     // Suma total
+    mov w23, #10    // Divisor
+    mov w24, #0     // Contador de posición actual
+calcular_suma:
+    // Obtener último dígito
+    udiv w25, w20, w23    // División por 10
+    msub w26, w25, w23, w20   // Residuo (dígito actual)
+    
+    // Calcular potencia
+    mov w27, #1     // Resultado de la potencia
+    mov w28, w21    // Exponente (cantidad de dígitos)
+calcular_potencia:
+    cbz w28, fin_potencia
+    mul w27, w27, w26     // Multiplicar por el dígito
+    sub w28, w28, #1
+    b calcular_potencia
+fin_potencia:
+    // Mostrar cálculo del dígito
+    stp w22, w20, [sp, #16]   // Guardar registros
+    adr x0, msg_digito
+    mov w1, w26            // Dígito
+    mov w2, w21            // Exponente
+    mov w3, w27            // Resultado
+    bl printf
+    ldp w22, w20, [sp, #16]   // Restaurar registros
+    
+    // Sumar al total
+    add w22, w22, w27
+    
+    // Preparar siguiente dígito
+    udiv w20, w20, w23
+    cbnz w20, calcular_suma
+    
+    // Mostrar suma total
+    adr x0, msg_suma
+    mov w1, w22
+    bl printf
+    
+    // Verificar si es Armstrong
+    cmp w22, w19
+    b.ne no_es_armstrong
+    
+    // Es Armstrong
+    adr x0, msg_es_armstrong
+    mov w1, w19
+    bl printf
+    b fin_programa
+    
+no_es_armstrong:
+    adr x0, msg_no_armstrong
+    mov w1, w19
+    bl printf
+    
+fin_programa:
+    // Epílogo
+    mov w0, #0
+    ldp x29, x30, [sp], 48
+    ret
+
+```
+## Descripción
+
+Programa 46 de 50 	Encontrar prefijo común más largo en cadenas.
+Video de Prueba
+https://asciinema.org/a/691039
+
+## Código Completo
+```c
+
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que encuentra el prefijo común más largo en cadenas.
+// Equivalente en C#:
+
+/*using System;
+
+class BuscadorPrefijoComun
+{
+    static void Main()
+    {
+        Console.WriteLine("\n=== BUSCADOR DE PREFIJO COMÚN MÁS LARGO ===");
+
+        // Solicitar la cantidad de cadenas
+        int cantidad;
+        while (true)
+        {
+            Console.Write("¿Cuántas cadenas desea comparar? (2-10): ");
+            if (int.TryParse(Console.ReadLine(), out cantidad) && cantidad >= 2 && cantidad <= 10)
+                break;
+            Console.WriteLine("Error: Ingrese una cantidad entre 2 y 10.");
+        }
+
+        // Leer las cadenas y almacenarlas en un arreglo
+        string[] cadenas = new string[cantidad];
+        for (int i = 0; i < cantidad; i++)
+        {
+            Console.Write($"Ingrese la cadena {i + 1}: ");
+            cadenas[i] = Console.ReadLine();
+        }
+
+        // Encontrar el prefijo común más largo
+        string prefijoComun = EncontrarPrefijoComun(cadenas);
+
+        // Mostrar el resultado
+        if (prefijoComun.Length > 0)
+        {
+            Console.WriteLine($"\nEl prefijo común más largo es: \"{prefijoComun}\"");
+        }
+        else
+        {
+            Console.WriteLine("\nNo hay prefijo común entre las cadenas.");
+        }
+    }
+
+    // Función para encontrar el prefijo común más largo
+    static string EncontrarPrefijoComun(string[] cadenas)
+    {
+        if (cadenas.Length == 0) return "";
+
+        string prefijo = cadenas[0];
+
+        for (int i = 1; i < cadenas.Length; i++)
+        {
+            int j = 0;
+            // Compara el prefijo con la siguiente cadena
+            while (j < prefijo.Length && j < cadenas[i].Length && prefijo[j] == cadenas[i][j])
+            {
+                j++;
+            }
+            // Reduce el prefijo hasta donde coinciden todos
+            prefijo = prefijo.Substring(0, j);
+
+            // Si el prefijo es vacío, no hay prefijo común
+            if (prefijo == "")
+                return "";
+        }
+
+        return prefijo;
+    }
+}
+*/
+
+
+.data
+msg_bienvenida: .string "\n=== BUSCADOR DE PREFIJO COMÚN MÁS LARGO ===\n"
+msg_cantidad: .string "¿Cuántas cadenas desea comparar? (2-10): "
+msg_ingresar: .string "Ingrese la cadena %d: "
+msg_resultado: .string "\nEl prefijo común más largo es: \"%s\"\n"
+msg_no_prefijo: .string "\nNo hay prefijo común entre las cadenas.\n"
+msg_error_cant: .string "Error: Ingrese una cantidad entre 2 y 10\n"
+formato_str: .string "%s"
+formato_int: .string "%d"
+nueva_linea: .string "\n"
+// Buffer para almacenar las cadenas
+buffer: .space 1024        // Espacio para todas las cadenas
+prefijo: .space 100        // Espacio para el prefijo común
+cantidad: .word 0
+max_cadenas: .word 10      // Máximo número de cadenas
+max_longitud: .word 100    // Máxima longitud por cadena
+// Array de punteros a las cadenas
+cadenas: .space 80         // 10 punteros * 8 bytes
+
+.text
+.global main
+.align 2
+main:
+    // Prólogo
+    stp x29, x30, [sp, -16]!
+    mov x29, sp
+    
+    // Mostrar bienvenida
+    adr x0, msg_bienvenida
+    bl printf
+    
+solicitar_cantidad:
+    // Solicitar cantidad de cadenas
+    adr x0, msg_cantidad
+    bl printf
+    
+    adr x0, formato_int
+    adr x1, cantidad
+    bl scanf
+    
+    // Limpiar buffer de entrada
+    mov w0, #0
+    bl getchar
+    
+    // Verificar rango válido (2-10)
+    adr x0, cantidad
+    ldr w19, [x0]        // w19 = cantidad de cadenas
+    cmp w19, #2
+    b.lt cantidad_invalida
+    adr x0, max_cadenas
+    ldr w0, [x0]
+    cmp w19, w0
+    b.gt cantidad_invalida
+    
+    // Inicializar variables
+    mov w20, #0          // Contador de cadenas
+    adr x21, cadenas     // Array de punteros
+    adr x22, buffer      // Buffer para cadenas
+    
+leer_cadenas:
+    // Mostrar prompt
+    adr x0, msg_ingresar
+    add w1, w20, #1
+    bl printf
+    
+    // Guardar puntero actual
+    str x22, [x21, x20, lsl #3]
+    
+    // Leer cadena usando scanf
+    adr x0, formato_str
+    mov x1, x22
+    bl scanf
+    
+    // Limpiar buffer de entrada
+    mov w0, #0
+    bl getchar
+    
+    // Buscar el final de la cadena
+    mov x0, x22
+buscar_fin:
+    ldrb w1, [x0]
+    cbz w1, siguiente_cadena
+    add x0, x0, #1
+    b buscar_fin
+    
+siguiente_cadena:
+    add x22, x22, #1     // Saltar el null terminator
+    add w20, w20, #1
+    cmp w20, w19
+    b.lt leer_cadenas
+    
+    // Encontrar prefijo común
+    adr x23, prefijo     // Buffer para prefijo
+    mov w24, #0          // Posición actual
+    
+comparar_caracteres:
+    // Obtener carácter de primera cadena
+    ldr x0, [x21]        // Primera cadena
+    ldrb w25, [x0, x24]  // Carácter a comparar
+    cbz w25, fin_prefijo // Si es null, terminar
+    
+    // Comparar con resto de cadenas
+    mov w20, #1          // Iniciar desde segunda cadena
+comparar_loop:
+    cmp w20, w19
+    b.ge guardar_caracter
+    
+    ldr x0, [x21, x20, lsl #3]
+    ldrb w26, [x0, x24]
+    
+    // Comparar caracteres
+    cmp w25, w26
+    b.ne fin_prefijo
+    
+    add w20, w20, #1
+    b comparar_loop
+    
+guardar_caracter:
+    // Guardar carácter en prefijo
+    strb w25, [x23, x24]
+    add w24, w24, #1
+    b comparar_caracteres
+    
+fin_prefijo:
+    // Terminar string
+    strb wzr, [x23, x24]
+    
+    // Verificar si hay prefijo
+    cmp w24, #0
+    b.eq no_hay_prefijo
+    
+    // Mostrar resultado
+    adr x0, msg_resultado
+    adr x1, prefijo
+    bl printf
+    b fin_programa
+    
+cantidad_invalida:
+    adr x0, msg_error_cant
+    bl printf
+    b solicitar_cantidad
+    
+no_hay_prefijo:
+    adr x0, msg_no_prefijo
+    bl printf
+    
+fin_programa:
+    // Epílogo
+    mov w0, #0
+    ldp x29, x30, [sp], 16
+    ret
+
+```
+## Descripción
+
+Programa 47 de 50 	Detección de desbordamiento en suma.
+Video de Prueba
+https://asciinema.org/a/691040
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa detecta el desbordamiento en suma.
+// Equivalente en C#:
+
+/*using System;
+
+class SumaConDeteccionDeOverflow
+{
+    static void Main()
+    {
+        Console.Write("Ingrese el primer número: ");
+        int numero1 = int.Parse(Console.ReadLine());
+
+        Console.Write("Ingrese el segundo número: ");
+        int numero2 = int.Parse(Console.ReadLine());
+
+        // Realizar la suma con manejo de overflow
+        try
+        {
+            int resultado = checked(numero1 + numero2); // "checked" para detectar overflow
+            Console.WriteLine($"La suma de {numero1} + {numero2} es: {resultado}");
+            Console.WriteLine("No hubo desbordamiento en la operación");
+        }
+        catch (OverflowException)
+        {
+            Console.WriteLine("¡Advertencia! Se ha detectado desbordamiento");
+        }
+    }
+}
+*/
+
+.arch armv8-a
+    .text
+    .align 2
+    .global main
+    .type main, @function
+
+main:
+    // Guardar enlace de retorno y frame pointer
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+    // Imprimir mensaje para primer número
+    adrp    x0, msg_num1
+    add     x0, x0, :lo12:msg_num1
+    bl      printf
+
+    // Leer primer número
+    adrp    x0, formato_int
+    add     x0, x0, :lo12:formato_int
+    adrp    x1, numero1
+    add     x1, x1, :lo12:numero1
+    bl      scanf
+
+    // Imprimir mensaje para segundo número
+    adrp    x0, msg_num2
+    add     x0, x0, :lo12:msg_num2
+    bl      printf
+
+    // Leer segundo número
+    adrp    x0, formato_int
+    add     x0, x0, :lo12:formato_int
+    adrp    x1, numero2
+    add     x1, x1, :lo12:numero2
+    bl      scanf
+
+    // Cargar números
+    adrp    x0, numero1
+    add     x0, x0, :lo12:numero1
+    ldr     w1, [x0]
+    adrp    x0, numero2
+    add     x0, x0, :lo12:numero2
+    ldr     w2, [x0]
+
+    // Realizar suma y verificar overflow
+    adds    w3, w1, w2
+    b.vs    1f  // Si hay overflow, salta
+
+    // Imprimir resultado sin overflow
+    adrp    x0, msg_resultado
+    add     x0, x0, :lo12:msg_resultado
+    bl      printf
+    b       2f
+
+1:  // Caso de overflow
+    adrp    x0, msg_overflow
+    add     x0, x0, :lo12:msg_overflow
+    bl      printf
+
+2:  // Fin del programa
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
+    ret
+
+    .section    .rodata
+msg_num1:       .string "Ingrese el primer número: "
+msg_num2:       .string "Ingrese el segundo número: "
+msg_resultado:  .string "Resultado: %d + %d = %d\n"
+msg_overflow:   .string "¡Se detectó overflow!\n"
+formato_int:    .string "%d"
+    
+    .data
+numero1:        .word 0
+numero2:        .word 0
+
+
+```
+## Descripción
+
+Programa 48 de 50  Mode el tiempo de ejecución de una función.
+Video de Prueba
+https://asciinema.org/a/691042
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que mide el tiempo de ejecución de una función.
+// Equivalente en C#:
+
+/*using System;
+using System.Diagnostics;
+
+class Program
+{
+    static void Main()
+    {
+        // Mensaje de inicio
+        Console.WriteLine("\n=== MEDIDOR DE TIEMPO DE EJECUCIÓN ===");
+
+        // Obtener el tiempo inicial
+        Stopwatch stopwatch = Stopwatch.StartNew();
+
+        // Llamar a la función que queremos medir
+        FuncionAMedir();
+
+        // Detener el cronómetro
+        stopwatch.Stop();
+
+        // Calcular el tiempo en microsegundos
+        long tiempoMicrosegundos = stopwatch.ElapsedTicks * 1000000 / Stopwatch.Frequency;
+
+        // Imprimir el tiempo de ejecución en microsegundos
+        Console.WriteLine($"Tiempo de ejecución: {tiempoMicrosegundos} microsegundos");
+    }
+
+    static void FuncionAMedir()
+    {
+        // Función que simula una tarea intensiva (ejemplo: bucle de conteo)
+        int contador = 0;
+        int iteraciones = 10000000;
+
+        for (int i = 0; i < iteraciones; i++)
+        {
+            contador++; // Incrementar el contador en cada iteración
+        }
+
+        // Imprimir mensaje de finalización
+        Console.WriteLine("Función completada");
+    }
+}
+*/
+
+.arch armv8-a
+    .text
+    .align 2
+    .global main
+    .type main, @function
+
+    // Definir constantes
+    .equ    CLOCK_MONOTONIC, 1
+    .equ    MILLION, 1000000
+    .equ    THOUSAND, 1000
+    .equ    MAX_ITER, 1000000
+
+main:
+    // Guardar registros
+    stp     x29, x30, [sp, -48]!
+    mov     x29, sp
+
+    // Reservar espacio para estructuras timespec
+    sub     sp, sp, #32     // Espacio para dos estructuras timespec
+
+    // Obtener tiempo inicial
+    mov     w0, #CLOCK_MONOTONIC    // CLOCK_MONOTONIC = 1
+    mov     x1, sp          // Primera estructura timespec
+    bl      clock_gettime
+
+    // Llamar a la función que queremos medir
+    bl      funcion_a_medir
+
+    // Obtener tiempo final
+    mov     w0, #CLOCK_MONOTONIC
+    add     x1, sp, #16     // Segunda estructura timespec
+    bl      clock_gettime
+
+    // Calcular la diferencia de tiempo
+    // Cargar tiempos iniciales
+    ldr     x0, [sp]        // Segundos iniciales
+    ldr     x1, [sp, #8]    // Nanosegundos iniciales
+    // Cargar tiempos finales
+    ldr     x2, [sp, #16]   // Segundos finales
+    ldr     x3, [sp, #24]   // Nanosegundos finales
+
+    // Calcular diferencia
+    sub     x2, x2, x0      // Diferencia en segundos
+    sub     x3, x3, x1      // Diferencia en nanosegundos
+
+    // Convertir a microsegundos totales
+    // Manejar los segundos
+    movz    x4, #MILLION & 0xFFFF
+    movk    x4, #(MILLION >> 16) & 0xFFFF, lsl #16
+    mul     x2, x2, x4      // Convertir segundos a microsegundos
+
+    // Manejar los nanosegundos
+    mov     x4, #THOUSAND
+    udiv    x3, x3, x4      // Convertir nanosegundos a microsegundos
+    
+    // Sumar ambas partes
+    add     x1, x2, x3      // Tiempo total en microsegundos
+
+    // Imprimir resultado
+    adrp    x0, msg_tiempo
+    add     x0, x0, :lo12:msg_tiempo
+    bl      printf
+
+    // Restaurar y salir
+    mov     w0, #0
+    add     sp, sp, #32     // Liberar espacio de estructuras timespec
+    ldp     x29, x30, [sp], 48
+    ret
+
+// Función que vamos a medir (ejemplo: bucle simple)
+funcion_a_medir:
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+    mov     x0, #0          // Contador
+    // Cargar el valor máximo de iteraciones
+    movz    x1, #MAX_ITER & 0xFFFF
+    movk    x1, #(MAX_ITER >> 16) & 0xFFFF, lsl #16
+
+1:  add     x0, x0, #1      // Incrementar contador
+    cmp     x0, x1          // Comparar con límite
+    b.lt    1b              // Repetir si es menor
+
+    // Imprimir mensaje de finalización
+    adrp    x0, msg_funcion
+    add     x0, x0, :lo12:msg_funcion
+    bl      printf
+
+    ldp     x29, x30, [sp], 16
+    ret
+
+    .section    .rodata
+msg_tiempo:     .string "Tiempo de ejecución: %ld microsegundos\n"
+msg_funcion:    .string "Función completada\n"
+
+```
+## Descripción
+
+Programa 49 de 50 	Leer entrada desde el teclado.
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que lee entrada desde el teclado.
+// Equivalente en C#:
+
+/*using System;
+
+class Program
+{
+    static void Main()
+    {
+        // Solicitar al usuario que ingrese un texto
+        Console.Write("Por favor, ingrese un texto: ");
+
+        // Leer la entrada del usuario
+        string? input = Console.ReadLine();
+
+        // Verificar si la entrada fue nula o vacía
+        if (string.IsNullOrEmpty(input))
+        {
+            Console.WriteLine("Error al leer la entrada");
+            Environment.Exit(1); // Código de error
+        }
+
+        // Remover el salto de línea final si existe
+        input = input.TrimEnd('\n', '\r');
+
+        // Imprimir el mensaje con la entrada
+        Console.WriteLine($"Has escrito: {input}");
+    }
+}
+*/
+
+
+.arch armv8-a
+    .global main
+    .extern printf
+    .extern fgets
+    .extern strlen
+    
+    .data
+prompt:     .string "Por favor, ingrese un texto: "
+output:     .string "Has escrito: %s\n"
+error_msg:  .string "Error al leer la entrada\n"
+
+    .bss
+    .align  4
+buffer:     .skip   100     // Buffer de 100 bytes
+
+    .text
+    .align  2
+main:
+    // Prólogo - guardar registros
+    stp     x29, x30, [sp, -16]!    // Guardar frame pointer y link register
+    mov     x29, sp                  // Actualizar frame pointer
+
+    // Imprimir prompt
+    adrp    x0, prompt              // Cargar dirección del prompt
+    add     x0, x0, :lo12:prompt
+    bl      printf
+
+    // Leer entrada usando fgets
+    adrp    x0, buffer              // Primer argumento: dirección del buffer
+    add     x0, x0, :lo12:buffer
+    mov     x1, #100                // Segundo argumento: tamaño máximo
+    mov     x2, #0                  // Tercer argumento: stdin (0)
+    mov     x8, #63                 // Número de syscall para read
+    bl      fgets                   // Llamar a fgets
+
+    // Verificar si fgets retornó NULL
+    cmp     x0, #0
+    beq     error_lectura
+
+    // Encontrar y eliminar el salto de línea
+    adrp    x0, buffer
+    add     x0, x0, :lo12:buffer
+    bl      strlen                  // Obtener longitud de la cadena
+    
+    adrp    x1, buffer             // Cargar dirección del buffer
+    add     x1, x1, :lo12:buffer
+    sub     x0, x0, #1             // Restar 1 para obtener la posición del \n
+    strb    wzr, [x1, x0]          // Almacenar null en lugar del \n
+
+    // Imprimir el resultado
+    adrp    x0, output             // Primer argumento: formato
+    add     x0, x0, :lo12:output
+    adrp    x1, buffer             // Segundo argumento: buffer
+    add     x1, x1, :lo12:buffer
+    bl      printf
+
+    mov     w0, #0                 // Código de retorno 0 (éxito)
+    b       fin
+
+error_lectura:
+    // Manejar error
+    adrp    x0, error_msg
+    add     x0, x0, :lo12:error_msg
+    bl      printf
+    mov     w0, #1                 // Código de retorno 1 (error)
+
+fin:
+    // Epílogo - restaurar registros y retornar
+    ldp     x29, x30, [sp], 16
+    ret
+
+    .size main, .-main
+```
+## Descripción
+
+Programa 50 de 50  Escribir en un archivo.
+
+## Código Completo
+```c
+// Autor: Pozos Flores Norberto
+// Fecha: 19/11/2024
+// Descripción: Programa que escribe en un archivo.
+// Equivalente en C#:
+
+/*
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Nombre del archivo
+        string filename = "archivo.txt";
+        // Mensaje a escribir
+        string message = "¡Hola! Este texto se ha escrito desde ensamblador ARM64.\n";
+
+        try
+        {
+            // Abrir y escribir en el archivo (esto crea o sobrescribe el archivo)
+            File.WriteAllText(filename, message);
+            // Imprimir mensaje de éxito
+            Console.WriteLine("Archivo escrito correctamente");
+        }
+        catch (Exception ex)
+        {
+            // Imprimir mensaje de error
+            Console.WriteLine("Error al abrir o escribir en el archivo: " + ex.Message);
+            // Salir con código de error (solo se puede simular; en apps normales no se usa explícitamente)
+            Environment.Exit(1);
+        }
+    }
+}
+
+*/
+.arch armv8-a
+    .text
+    .align 2
+    .global main
+    .type main, @function
+
+    // Definir constantes para syscalls
+    .equ    SYS_OPEN, 56
+    .equ    SYS_WRITE, 64
+    .equ    SYS_CLOSE, 57
+    .equ    O_WRONLY, 1
+    .equ    O_CREAT, 0100
+    .equ    O_TRUNC, 01000
+    .equ    MODE, 0644      // rw-r--r--
+
+main:
+    // Prólogo
+    stp     x29, x30, [sp, -16]!
+    mov     x29, sp
+
+    // Abrir archivo
+    // open("archivo.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644)
+    adrp    x0, filename
+    add     x0, x0, :lo12:filename    // nombre del archivo
+    mov     w1, #(O_WRONLY | O_CREAT | O_TRUNC)  // flags
+    mov     w2, #MODE                  // permisos
+    mov     x8, #SYS_OPEN
+    svc     #0
+    
+    // Guardar file descriptor
+    mov     x19, x0         // Guardar fd en x19
+    
+    // Comprobar error
+    cmp     x0, #0
+    b.lt    error
+
+    // Escribir en archivo
+    mov     x0, x19         // fd
+    adrp    x1, message
+    add     x1, x1, :lo12:message     // buffer
+    adrp    x2, message_len
+    add     x2, x2, :lo12:message_len // longitud
+    ldr     x2, [x2]
+    mov     x8, #SYS_WRITE
+    svc     #0
+
+    // Cerrar archivo
+    mov     x0, x19         // fd
+    mov     x8, #SYS_CLOSE
+    svc     #0
+
+    // Imprimir mensaje de éxito
+    adrp    x0, success_msg
+    add     x0, x0, :lo12:success_msg
+    bl      printf
+
+    // Epílogo y salida exitosa
+    mov     w0, #0
+    ldp     x29, x30, [sp], 16
+    ret
+
+error:
+    // Imprimir mensaje de error
+    adrp    x0, error_msg
+    add     x0, x0, :lo12:error_msg
+    bl      printf
+
+    // Salir con código de error
+    mov     w0, #1
+    ldp     x29, x30, [sp], 16
+    ret
+
+    .section    .rodata
+filename:       .string     "archivo.txt"
+message:        .string     "¡Hola! Este texto se ha escrito desde ensamblador ARM64.\n"
+message_len:    .quad       . - message
+error_msg:      .string     "Error al abrir el archivo\n"
+success_msg:    .string     "Archivo escrito correctamente\n"
+```
